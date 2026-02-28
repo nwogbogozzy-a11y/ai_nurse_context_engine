@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useMemo } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
@@ -26,6 +26,25 @@ export default function PatientDetail() {
   const [generatingHandoff, setGeneratingHandoff] = useState(false)
   const [handoffError, setHandoffError] = useState<string | null>(null)
   const [handoffExtras, setHandoffExtras] = useState<Record<string, { stable_items: string[]; recommended_first_actions: string[] }>>({})
+  const [highlightedNoteId, setHighlightedNoteId] = useState<string | null>(null)
+
+  // Correlate notes to supply_requests by timestamp proximity (within 120s)
+  const noteProcedures = useMemo(() => {
+    const map: Record<string, string[]> = {}
+    for (const note of notes) {
+      const noteTime = new Date(note.created_at).getTime()
+      for (const supply of supplies) {
+        const supplyTime = new Date(supply.generated_at).getTime()
+        if (Math.abs(noteTime - supplyTime) <= 120000) {
+          if (!map[note.id]) map[note.id] = []
+          if (!map[note.id].includes(supply.procedure)) {
+            map[note.id].push(supply.procedure)
+          }
+        }
+      }
+    }
+    return map
+  }, [notes, supplies])
 
   const fetchData = useCallback(async () => {
     const [patientRes, notesRes, suppliesRes, handoffsRes] = await Promise.all([
@@ -44,10 +63,19 @@ export default function PatientDetail() {
 
   useEffect(() => { fetchData() }, [fetchData])
 
-  const handleDictationResult = (result: WebhookResponse) => {
-    fetchData()
-    if (result.supply_list) {
-      setActiveTab('supplies')
+  const handleDictationResult = async (result: WebhookResponse) => {
+    await fetchData()
+    setActiveTab('notes')
+    // Highlight the newest note (first in the list after fetch)
+    const { data: latestNotes } = await supabase
+      .from('notes')
+      .select('id')
+      .eq('patient_id', patientId)
+      .order('created_at', { ascending: false })
+      .limit(1)
+    if (latestNotes?.[0]) {
+      setHighlightedNoteId(latestNotes[0].id)
+      setTimeout(() => setHighlightedNoteId(null), 2000)
     }
   }
 
@@ -222,7 +250,9 @@ export default function PatientDetail() {
               >
                 {tab.label}
                 {tab.count > 0 && (
-                  <span className="ml-1.5 px-1.5 py-0.5 text-xs rounded-full bg-surface text-muted">
+                  <span className={`ml-1.5 px-1.5 py-0.5 text-xs rounded-full ${
+                    activeTab === tab.key ? 'bg-accent/10 text-accent' : 'bg-surface text-muted'
+                  }`}>
                     {tab.count}
                   </span>
                 )}
@@ -237,8 +267,16 @@ export default function PatientDetail() {
                   <p className="text-secondary">No notes yet. Use the dictation input to create the first note.</p>
                 </div>
               ) : (
-                notes.map((note) => (
-                  <StructuredNote key={note.id} note={note} />
+                notes.map((note, index) => (
+                  <StructuredNote
+                    key={note.id}
+                    note={note}
+                    noteNumber={notes.length - index}
+                    procedures={noteProcedures[note.id]}
+                    hasSupplyList={!!noteProcedures[note.id]?.length}
+                    onSupplyClick={() => setActiveTab('supplies')}
+                    isHighlighted={highlightedNoteId === note.id}
+                  />
                 ))
               )
             )}
