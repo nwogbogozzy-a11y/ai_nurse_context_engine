@@ -1,0 +1,83 @@
+export interface Patient {
+  id: string
+  full_name: string
+  date_of_birth: string
+  admission_date: string
+  ward: string
+  unit_type: string
+  current_status: string
+  created_at: string
+}
+
+export interface StructuredNote {
+  subjective: string
+  objective: string
+  assessment: string
+  plan: string
+}
+
+export interface Note {
+  id: string
+  patient_id: string
+  raw_input: string
+  structured_note: StructuredNote
+  shift: string
+  nurse_name: string
+  flagged: boolean
+  flag_reason: string
+  created_at: string
+}
+
+export interface SupplyItem {
+  item: string
+  quantity: number
+  unit: string
+  notes: string
+}
+
+export interface SupplyRequest {
+  id: string
+  patient_id: string
+  procedure: string
+  items: SupplyItem[]
+  generated_at: string
+  confirmed_by: string | null
+}
+
+export interface PriorityFlag {
+  type: 'warning' | 'critical'
+  detail: string
+}
+
+export interface HandoffReport {
+  id: string
+  patient_id: string
+  incoming_nurse: string
+  summary: string
+  flags: PriorityFlag[]
+  generated_at: string
+  shift_start: string
+}
+
+export interface WebhookResponse {
+  success: boolean
+  note: {
+    structured_note: StructuredNote
+    flagged: boolean
+    flag_reason: string
+    procedures: string[]
+    patient_id: string
+    nurse_name: string
+    shift: string
+  }
+  supply_list?: {
+    procedure: string
+    items: SupplyItem[]
+  }
+  handoff_report?: {
+    summary: string
+    priority_flags: PriorityFlag[]
+    stable_items: string[]
+    recommended_first_actions: string[]
+  }
+}

@@ -1,0 +1,512 @@
+{
+  "name": "Nurse Context Engine",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "nurse-context",
+        "responseMode": "responseNode",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              }
+            ]
+          }
+        }
+      },
+      "id": "n1-webhook",
+      "name": "N1 Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [250, 300],
+      "webhookId": "nurse-context"
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={{ JSON.stringify({ patient_id: $json.body.patient_id, raw_input: $json.body.raw_input, nurse_name: $json.body.nurse_name || 'Nurse', shift: $json.body.shift || 'day', input_type: $json.body.input_type || 'note' }) }}",
+        "options": {}
+      },
+      "id": "n2-parse-input",
+      "name": "N2 Parse Input",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [470, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/patients?id=eq.{{ $json.patient_id }}&select=*",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $env.SUPABASE_ANON_KEY }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "n3-fetch-patient",
+      "name": "N3 Fetch Patient Context",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [690, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-api-key",
+              "value": "={{ $env.ANTHROPIC_API_KEY }}"
+            },
+            {
+              "name": "anthropic-version",
+              "value": "2023-06-01"
+            },
+            {
+              "name": "content-type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 1024, messages: [{ role: 'user', content: 'You are a clinical documentation assistant helping nurses create accurate, structured patient notes.\\n\\nGiven a nurse\\'s raw dictation and the patient\\'s current context, produce:\\n1. A structured clinical note in SOAP format (Subjective, Objective, Assessment, Plan)\\n2. A flagged field (true/false) — flag if any value is outside expected range or requires urgent human review\\n3. A flag_reason (string) — plain English explanation of why this was flagged, if applicable\\n4. A procedures array — list any clinical procedures mentioned that would require supplies\\n\\nPatient context: ' + JSON.stringify($('N3 Fetch Patient Context').item.json[0] || $('N3 Fetch Patient Context').item.json) + '\\nRaw dictation: ' + $('N2 Parse Input').item.json.raw_input + '\\nShift: ' + $('N2 Parse Input').item.json.shift + '\\n\\nReturn valid JSON only. No preamble. No explanation outside the JSON.\\n\\n{\\n  \"structured_note\": { \"subjective\": \"\", \"objective\": \"\", \"assessment\": \"\", \"plan\": \"\" },\\n  \"flagged\": false,\\n  \"flag_reason\": \"\",\\n  \"procedures\": []\\n}' }] }) }}",
+        "options": {}
+      },
+      "id": "n4-claude-note",
+      "name": "N4 Claude Structure Note",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [910, 300]
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={{ (() => { const text = $json.content[0].text; const parsed = JSON.parse(text); const input = $('N2 Parse Input').item.json; return JSON.stringify({ patient_id: input.patient_id, raw_input: input.raw_input, nurse_name: input.nurse_name, shift: input.shift, input_type: input.input_type, structured_note: parsed.structured_note, flagged: parsed.flagged, flag_reason: parsed.flag_reason || '', procedures: parsed.procedures || [], patient_context: $('N3 Fetch Patient Context').item.json[0] || $('N3 Fetch Patient Context').item.json }); })() }}",
+        "options": {}
+      },
+      "id": "n5-parse-response",
+      "name": "N5 Parse Claude Response",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1130, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/notes",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $env.SUPABASE_ANON_KEY }}"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $env.SUPABASE_ANON_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Prefer",
+              "value": "return=representation"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ patient_id: $json.patient_id, raw_input: $json.raw_input, structured_note: $json.structured_note, shift: $json.shift, nurse_name: $json.nurse_name, flagged: $json.flagged, flag_reason: $json.flag_reason }) }}",
+        "options": {}
+      },
+      "id": "n6-save-note",
+      "name": "N6 Save Note to Supabase",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1350, 300]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $('N5 Parse Claude Response').item.json.input_type }}",
+                    "rightValue": "handoff",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputLabel": "Handoff"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $('N5 Parse Claude Response').item.json.procedures.length }}",
+                    "rightValue": "0",
+                    "operator": {
+                      "type": "number",
+                      "operation": "gt"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputLabel": "Supply"
+            }
+          ],
+          "fallbackOutput": {
+            "renameOutput": true,
+            "outputLabel": "Response Only"
+          }
+        },
+        "options": {
+          "allMatchingOutputs": true
+        }
+      },
+      "id": "n7-router",
+      "name": "N7 Router",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [1570, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-api-key",
+              "value": "={{ $env.ANTHROPIC_API_KEY }}"
+            },
+            {
+              "name": "anthropic-version",
+              "value": "2023-06-01"
+            },
+            {
+              "name": "content-type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 1024, messages: [{ role: 'user', content: 'You are a clinical supply coordinator helping nurses prepare for procedures efficiently.\\n\\nGiven the procedure(s) about to be performed and the patient\\'s current context, generate a precise supply checklist. Include only what is needed — do not pad the list. Return valid JSON only. No markdown code fences. No preamble.\\n\\nPatient context: ' + JSON.stringify($('N5 Parse Claude Response').item.json.patient_context) + '\\nProcedures: ' + JSON.stringify($('N5 Parse Claude Response').item.json.procedures) + '\\nUnit type: ' + ($('N5 Parse Claude Response').item.json.patient_context.unit_type || 'general') + '\\n\\nReturn valid JSON only.\\n\\n{\\n  \"procedure\": \"\",\\n  \"items\": [\\n    { \"item\": \"\", \"quantity\": 0, \"unit\": \"\", \"notes\": \"\" }\\n  ]\\n}' }] }) }}",
+        "options": {}
+      },
+      "id": "n8a-claude-supply",
+      "name": "N8a Claude Supply List",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1790, 200]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-api-key",
+              "value": "={{ $env.ANTHROPIC_API_KEY }}"
+            },
+            {
+              "name": "anthropic-version",
+              "value": "2023-06-01"
+            },
+            {
+              "name": "content-type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ (() => { const patientId = $('N2 Parse Input').item.json.patient_id; return JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 2048, messages: [{ role: 'user', content: 'You are a clinical handoff assistant helping incoming nurses start their shift with full situational awareness.\\n\\nGiven the patient record and recent notes, produce a structured handoff briefing. Prioritize: what changed, what needs watching, what is stable. Cut anything that does not help the incoming nurse in the first 30 minutes.\\n\\nPatient record: ' + JSON.stringify($('N5 Parse Claude Response').item.json.patient_context) + '\\nRecent notes: ' + JSON.stringify($('N5 Parse Claude Response').item.json.structured_note) + '\\nRaw input: ' + $('N5 Parse Claude Response').item.json.raw_input + '\\nIncoming shift: ' + ($('N2 Parse Input').item.json.shift === 'day' ? 'night' : 'day') + '\\n\\nReturn valid JSON only.\\n\\n{\\n  \"summary\": \"\",\\n  \"priority_flags\": [\\n    { \"type\": \"warning|critical\", \"detail\": \"\" }\\n  ],\\n  \"stable_items\": [],\\n  \"recommended_first_actions\": []\\n}' }] }); })() }}",
+        "options": {}
+      },
+      "id": "n8b-claude-handoff",
+      "name": "N8b Claude Handoff Report",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1790, 450]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/supply_requests",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $env.SUPABASE_ANON_KEY }}"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $env.SUPABASE_ANON_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Prefer",
+              "value": "return=representation"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ (() => { let text = $json.content[0].text.replace(/```json\\n?/g, '').replace(/```\\n?/g, '').trim(); const supply = JSON.parse(text); return JSON.stringify({ patient_id: $('N5 Parse Claude Response').item.json.patient_id, procedure: supply.procedure, items: supply.items }); })() }}",
+        "options": {}
+      },
+      "id": "n9a-save-supply",
+      "name": "N9a Save Supply Request",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2010, 200]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/handoff_reports",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $env.SUPABASE_ANON_KEY }}"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $env.SUPABASE_ANON_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Prefer",
+              "value": "return=representation"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ (() => { const report = JSON.parse($json.content[0].text); return JSON.stringify({ patient_id: $('N5 Parse Claude Response').item.json.patient_id, incoming_nurse: $('N2 Parse Input').item.json.nurse_name || 'Incoming Nurse', summary: report.summary, flags: report.priority_flags, shift_start: new Date().toISOString() }); })() }}",
+        "options": {}
+      },
+      "id": "n9b-save-handoff",
+      "name": "N9b Save Handoff Report",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2010, 450]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ (() => { const parsed = $('N5 Parse Claude Response').item.json; const strip = (t) => t.replace(/```json\\n?/g, '').replace(/```\\n?/g, '').trim(); const result = { success: true, note: { structured_note: parsed.structured_note, flagged: parsed.flagged, flag_reason: parsed.flag_reason, procedures: parsed.procedures, patient_id: parsed.patient_id, nurse_name: parsed.nurse_name, shift: parsed.shift } }; try { if (parsed.input_type === 'handoff') { result.handoff_report = JSON.parse(strip($('N8b Claude Handoff Report').item.json.content[0].text)); } } catch(e) {} try { if (parsed.procedures && parsed.procedures.length > 0) { result.supply_list = JSON.parse(strip($('N8a Claude Supply List').item.json.content[0].text)); } } catch(e) {} return JSON.stringify(result); })() }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              },
+              {
+                "name": "Access-Control-Allow-Headers",
+                "value": "Content-Type"
+              }
+            ]
+          }
+        }
+      },
+      "id": "n10-response",
+      "name": "N10 Webhook Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [2230, 300]
+    }
+  ],
+  "connections": {
+    "N1 Webhook": {
+      "main": [
+        [
+          {
+            "node": "N2 Parse Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "N2 Parse Input": {
+      "main": [
+        [
+          {
+            "node": "N3 Fetch Patient Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "N3 Fetch Patient Context": {
+      "main": [
+        [
+          {
+            "node": "N4 Claude Structure Note",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "N4 Claude Structure Note": {
+      "main": [
+        [
+          {
+            "node": "N5 Parse Claude Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "N5 Parse Claude Response": {
+      "main": [
+        [
+          {
+            "node": "N6 Save Note to Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "N6 Save Note to Supabase": {
+      "main": [
+        [
+          {
+            "node": "N7 Router",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "N7 Router": {
+      "main": [
+        [
+          {
+            "node": "N8b Claude Handoff Report",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "N8a Claude Supply List",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "N10 Webhook Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "N8a Claude Supply List": {
+      "main": [
+        [
+          {
+            "node": "N9a Save Supply Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "N8b Claude Handoff Report": {
+      "main": [
+        [
+          {
+            "node": "N9b Save Handoff Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "N9a Save Supply Request": {
+      "main": [
+        [
+          {
+            "node": "N10 Webhook Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "N9b Save Handoff Report": {
+      "main": [
+        [
+          {
+            "node": "N10 Webhook Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 1
+}

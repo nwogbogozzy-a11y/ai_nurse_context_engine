@@ -1,0 +1,40 @@
+@import "tailwindcss";
+
+@theme inline {
+  --color-background: #FFFFFF;
+  --color-surface: #F8FAFC;
+  --color-border: #E2E8F0;
+  --color-primary: #0F172A;
+  --color-secondary: #475569;
+  --color-muted: #94A3B8;
+  --color-accent: #0EA5E9;
+  --color-accent-hover: #0284C7;
+  --color-accent-foreground: #FFFFFF;
+  --color-flag-warning: #F59E0B;
+  --color-flag-warning-bg: #FFFBEB;
+  --color-flag-critical: #EF4444;
+  --color-flag-critical-bg: #FEF2F2;
+  --color-flag-safe: #10B981;
+  --color-flag-safe-bg: #F0FDF4;
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', 'Cascadia Code', monospace;
+}
+
+@layer base {
+  body {
+    background-color: var(--color-background);
+    color: var(--color-primary);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+.animate-blink {
+  animation: blink 1s step-end infinite;
+}
