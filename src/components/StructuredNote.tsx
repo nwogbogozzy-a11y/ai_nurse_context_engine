@@ -34,8 +34,11 @@ export function StructuredNote({ note, noteNumber, procedures, hasSupplyList, on
 
   const soapSections = [
     { key: 'S', label: 'Subjective', content: parsed?.subjective },
+    { key: 'S-HPI', label: 'History of Present Illness', content: parsed?.history_of_present_illness, nested: true },
+    { key: 'S-CM', label: 'Relevant Comorbidities', content: parsed?.comorbidities, nested: true },
     { key: 'O', label: 'Objective', content: parsed?.objective },
     { key: 'A', label: 'Assessment', content: parsed?.assessment },
+    { key: 'A-I', label: 'Interventions (Prior Shift)', content: parsed?.interventions, nested: true },
     { key: 'P', label: 'Plan', content: parsed?.plan },
   ]
 
@@ -79,16 +82,19 @@ export function StructuredNote({ note, noteNumber, procedures, hasSupplyList, on
       </div>
 
       <div className="px-5 py-4 space-y-3">
-        {soapSections.map((section) => (
-          <div key={section.key}>
-            <span className="text-xs font-medium uppercase tracking-wide text-secondary">
-              {section.label}
-            </span>
-            <p className="text-sm leading-relaxed text-primary mt-1">
-              {section.content || '—'}
-            </p>
-          </div>
-        ))}
+        {soapSections.map((section) => {
+          if (section.nested && !section.content) return null
+          return (
+            <div key={section.key} className={section.nested ? 'pl-3 border-l-2 border-border' : ''}>
+              <span className={`font-medium uppercase tracking-wide text-secondary ${section.nested ? 'text-[10px]' : 'text-xs'}`}>
+                {section.label}
+              </span>
+              <p className="text-sm leading-relaxed text-primary mt-1">
+                {section.content || '—'}
+              </p>
+            </div>
+          )
+        })}
       </div>
 
       {/* Procedure tags */}
