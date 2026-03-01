@@ -11,8 +11,11 @@ export interface Patient {
 
 export interface StructuredNote {
   subjective: string
+  history_of_present_illness?: string
+  comorbidities?: string
   objective: string
   assessment: string
+  interventions?: string
   plan: string
 }
 
