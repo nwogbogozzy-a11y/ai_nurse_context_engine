@@ -9,6 +9,7 @@ import { FlagBadge } from '@/components/FlagBadge'
 import { DictationInput } from '@/components/DictationInput'
 import { StructuredNote } from '@/components/StructuredNote'
 import { SupplyChecklist } from '@/components/SupplyChecklist'
+import { ProcedureSearch } from '@/components/ProcedureSearch'
 import { HandoffReport } from '@/components/HandoffReport'
 
 type Tab = 'notes' | 'supplies' | 'handoff'
@@ -282,20 +283,27 @@ export default function PatientDetail() {
             )}
 
             {activeTab === 'supplies' && (
-              supplies.length === 0 ? (
-                <div className="bg-surface border border-border rounded-lg p-8 text-center">
-                  <p className="text-secondary">No supply requests yet. Supply lists are generated automatically when a procedure is mentioned in dictation.</p>
-                </div>
-              ) : (
-                supplies.map((supply) => (
-                  <SupplyChecklist
-                    key={supply.id}
-                    procedure={supply.procedure}
-                    items={supply.items}
-                    generatedAt={new Date(supply.generated_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
-                  />
-                ))
-              )
+              <>
+                <ProcedureSearch
+                  patientId={patientId}
+                  unitType={patient.unit_type}
+                  onResult={fetchData}
+                />
+                {supplies.length === 0 ? (
+                  <div className="bg-surface border border-border rounded-lg p-8 text-center">
+                    <p className="text-secondary">No supply requests yet. Search for a procedure above or dictate a note that mentions one.</p>
+                  </div>
+                ) : (
+                  supplies.map((supply) => (
+                    <SupplyChecklist
+                      key={supply.id}
+                      procedure={supply.procedure}
+                      items={supply.items}
+                      generatedAt={new Date(supply.generated_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
+                    />
+                  ))
+                )}
+              </>
             )}
 
             {activeTab === 'handoff' && (

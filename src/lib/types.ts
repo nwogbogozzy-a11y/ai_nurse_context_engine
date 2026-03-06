@@ -62,6 +62,14 @@ export interface HandoffReport {
   shift_start: string
 }
 
+export interface SupplyLookupResponse {
+  success: boolean
+  supply_list: {
+    procedure: string
+    items: SupplyItem[]
+  }
+}
+
 export interface WebhookResponse {
   success: boolean
   note: {

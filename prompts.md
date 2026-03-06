@@ -53,7 +53,9 @@ Return valid JSON only. No preamble. No explanation outside the JSON. No markdow
 
 **Model:** claude-sonnet-4-20250514
 **Max tokens:** 1024
-**Trigger:** Automatically when procedures array is non-empty
+**Trigger:** Two paths:
+1. **Auto-trigger** — when procedures array is non-empty after note dictation (existing n8n pipeline)
+2. **Standalone trigger** — nurse searches a procedure directly via Procedure Search UI (dedicated `/webhook/supply-lookup` pipeline)
 
 ```
 You are a clinical supply coordinator helping nurses prepare for procedures efficiently.

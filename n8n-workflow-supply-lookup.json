@@ -1,0 +1,220 @@
+{
+  "name": "Nurse Context Engine — Supply Lookup",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "supply-lookup",
+        "responseMode": "responseNode",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              }
+            ]
+          }
+        }
+      },
+      "id": "s1-webhook",
+      "name": "S1 Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [250, 300],
+      "webhookId": "supply-lookup"
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={{ JSON.stringify({ patient_id: $json.body.patient_id, procedure: $json.body.procedure, unit_type: $json.body.unit_type || 'general' }) }}",
+        "options": {}
+      },
+      "id": "s2-parse",
+      "name": "S2 Parse Input",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [470, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/patients?id=eq.{{ $json.patient_id }}&select=*",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $env.SUPABASE_ANON_KEY }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "s3-fetch-patient",
+      "name": "S3 Fetch Patient",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [690, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-api-key",
+              "value": "={{ $env.ANTHROPIC_API_KEY }}"
+            },
+            {
+              "name": "anthropic-version",
+              "value": "2023-06-01"
+            },
+            {
+              "name": "content-type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 1024, messages: [{ role: 'user', content: 'You are a clinical supply coordinator helping nurses prepare for procedures efficiently.\\n\\nGiven the procedure(s) about to be performed and the patient\\'s current context, generate a precise supply checklist. Include only what is needed — do not pad the list. Return valid JSON only. No markdown code fences. No preamble.\\n\\nPatient context: ' + JSON.stringify($('S3 Fetch Patient').item.json[0] || $('S3 Fetch Patient').item.json) + '\\nProcedures: [\"' + $('S2 Parse Input').item.json.procedure + '\"]\\nUnit type: ' + $('S2 Parse Input').item.json.unit_type + '\\n\\nReturn valid JSON only.\\n\\n{\\n  \"procedure\": \"\",\\n  \"items\": [\\n    { \"item\": \"\", \"quantity\": 0, \"unit\": \"\", \"notes\": \"\" }\\n  ]\\n}' }] }) }}",
+        "options": {}
+      },
+      "id": "s4-claude-supply",
+      "name": "S4 Claude Supply List",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [910, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/supply_requests",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $env.SUPABASE_ANON_KEY }}"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $env.SUPABASE_ANON_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Prefer",
+              "value": "return=representation"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ (() => { let text = $json.content[0].text.replace(/```json\\n?/g, '').replace(/```\\n?/g, '').trim(); const supply = JSON.parse(text); return JSON.stringify({ patient_id: $('S2 Parse Input').item.json.patient_id, procedure: supply.procedure, items: supply.items }); })() }}",
+        "options": {}
+      },
+      "id": "s5-save-supply",
+      "name": "S5 Save Supply Request",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1130, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ (() => { let text = $('S4 Claude Supply List').item.json.content[0].text.replace(/```json\\n?/g, '').replace(/```\\n?/g, '').trim(); const supply = JSON.parse(text); return JSON.stringify({ success: true, supply_list: { procedure: supply.procedure, items: supply.items } }); })() }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              },
+              {
+                "name": "Access-Control-Allow-Headers",
+                "value": "Content-Type"
+              }
+            ]
+          }
+        }
+      },
+      "id": "s6-response",
+      "name": "S6 Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1350, 300]
+    }
+  ],
+  "connections": {
+    "S1 Webhook": {
+      "main": [
+        [
+          {
+            "node": "S2 Parse Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "S2 Parse Input": {
+      "main": [
+        [
+          {
+            "node": "S3 Fetch Patient",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "S3 Fetch Patient": {
+      "main": [
+        [
+          {
+            "node": "S4 Claude Supply List",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "S4 Claude Supply List": {
+      "main": [
+        [
+          {
+            "node": "S5 Save Supply Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "S5 Save Supply Request": {
+      "main": [
+        [
+          {
+            "node": "S6 Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 1
+}
