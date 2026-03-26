@@ -1,0 +1,81 @@
+# Requirements — v2 Milestone
+
+## v1 Requirements
+
+### Functional Foundation
+
+- [ ] **FOUND-01**: Nurse can switch active identity via dropdown (predefined nurses: Sarah Chen - Night, Marcus Webb - Morning) and all subsequent actions are attributed to the selected nurse
+- [ ] **FOUND-02**: Nurse can approve a flagged note and the approval persists to Supabase (survives page refresh)
+- [ ] **FOUND-03**: Nurse can escalate a flagged note and the escalation persists to Supabase (survives page refresh)
+- [ ] **FOUND-04**: Nurse can override a flagged note and the override persists to Supabase (survives page refresh)
+- [ ] **FOUND-05**: Supply requests are linked to notes via note_id foreign key (not timestamp proximity)
+- [ ] **FOUND-06**: Handoff report extras (stable_items, recommended_first_actions) persist to Supabase and display on page reload
+- [ ] **FOUND-07**: Supply checklist confirmation state persists to Supabase (survives page refresh)
+- [ ] **FOUND-08**: Dictation input supports both pre-scripted demo scenarios (typewriter animation) and free-form text entry that the nurse types directly — both paths submit to n8n and produce structured SOAP output
+
+### Compliance & Accountability
+
+- [ ] **COMP-01**: Every nurse action (approve, escalate, override, generate handoff, confirm supply) writes an audit event to an audit_log table with nurse_name, action_type, patient_id, timestamp, and metadata
+- [ ] **COMP-02**: Patient detail view includes an "Activity" tab showing chronological audit trail for that patient
+- [ ] **COMP-03**: Flagged notes support a review status state machine (flagged -> under_review -> resolved) with resolving nurse attribution and timestamp
+- [ ] **COMP-04**: Flag escalation state transitions are visible as badge progression on the note display
+
+### AI Context Intelligence
+
+- [ ] **AICTX-01**: When structuring a new note, the AI prompt includes a summary of the patient's prior notes (last 5 notes, Assessment + Plan sections) as context
+- [ ] **AICTX-02**: Patient detail view shows a "Patient History" section displaying the AI-aggregated context summary
+- [ ] **AICTX-03**: Supply checklist is reframed as "Procedure Prep Recommendations" with rationale attribution ("AI suggested based on [procedure] + [patient context]")
+- [ ] **AICTX-04**: Each supply/recommendation item shows confidence context (procedure source, unit type consideration)
+
+### Real-Time System
+
+- [ ] **RT-01**: When Nurse A submits a note, Nurse B's open view of the same patient updates automatically without manual refresh (Supabase Realtime subscription on notes table)
+- [ ] **RT-02**: When a handoff report is generated, any open patient view reflects the new report automatically
+- [ ] **RT-03**: When supply requests are created, any open patient view reflects the new supplies automatically
+- [ ] **RT-04**: Patient dashboard (home page) reflects status changes in real-time (flag badges update live)
+
+### UI Professional Polish
+
+- [ ] **UI-01**: All components upgraded to shadcn/ui with Radix primitives (WCAG 2.1 AA accessible by default)
+- [ ] **UI-02**: Patient dashboard uses card components with clear visual hierarchy (name, ward, status, last note timestamp, flag badges)
+- [ ] **UI-03**: Patient detail view three-panel layout has professional typography, spacing, and visual separation between panels
+- [ ] **UI-04**: Structured SOAP notes display with clear visual hierarchy (section headers, indentation, temporal context)
+- [ ] **UI-05**: Flag badges use semantic color system consistently (amber=warning, red=critical, green=safe) with sufficient contrast for WCAG AA
+- [ ] **UI-06**: Loading states use skeleton components during AI processing (not just "Processing..." text)
+- [ ] **UI-07**: Error states display actionable feedback when webhook calls fail (not silent failures)
+- [ ] **UI-08**: Toast notifications for nurse actions (approve, escalate, override) confirming persistence via sonner
+- [ ] **UI-09**: Audit trail / Activity tab uses clean timeline component with nurse avatars and action icons
+- [ ] **UI-10**: Handoff report renders with professional clinical formatting (summary, priority flags with badges, stable items, recommended actions)
+
+---
+
+## v2 Requirements (Deferred)
+
+- [ ] Handoff completeness score (readiness indicator before generating report) — requires defining expected note categories per unit type; needs clinical domain research
+- [ ] Advanced AI context window management (token budgeting for large patient histories) — relevant only at production scale
+- [ ] Notification/alert system (push or email for critical flags) — external delivery plumbing not needed for demo
+
+## Out of Scope
+
+- Real voice input / speech-to-text — typewriter simulation is intentional for demo reliability
+- User authentication / login system — predefined nurse identities via dropdown; no passwords
+- Mobile/tablet responsive layout — desktop workstation tool by design
+- Dashboard analytics / charts — this is a context engine, not an analytics dashboard
+- PDF export of handoff reports — context lives in the system, not in printouts
+- Auto-fill from historical notes — AI context informs generation, never pre-fills input (patient safety)
+- Production security hardening — RLS policies are demo-appropriate
+- Cannabis retail reskin — the nurse domain IS the demo; the FIKA analogy is verbal (video)
+
+---
+
+## Traceability
+
+<!-- Filled by roadmapper -->
+
+| REQ-ID | Phase | Status |
+|--------|-------|--------|
+| | | |
+
+---
+*Requirements defined: 2026-03-26*
+*Source: FIKA AI Builder application — portfolio optimization milestone*
