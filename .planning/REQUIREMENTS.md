@@ -70,12 +70,40 @@
 
 ## Traceability
 
-<!-- Filled by roadmapper -->
-
 | REQ-ID | Phase | Status |
 |--------|-------|--------|
-| | | |
+| FOUND-01 | Phase 1 | Pending |
+| FOUND-02 | Phase 1 | Pending |
+| FOUND-03 | Phase 1 | Pending |
+| FOUND-04 | Phase 1 | Pending |
+| FOUND-05 | Phase 1 | Pending |
+| FOUND-06 | Phase 1 | Pending |
+| FOUND-07 | Phase 1 | Pending |
+| FOUND-08 | Phase 1 | Pending |
+| UI-07 | Phase 1 | Pending |
+| UI-08 | Phase 1 | Pending |
+| COMP-01 | Phase 2 | Pending |
+| COMP-02 | Phase 2 | Pending |
+| COMP-03 | Phase 2 | Pending |
+| COMP-04 | Phase 2 | Pending |
+| UI-05 | Phase 2 | Pending |
+| UI-09 | Phase 2 | Pending |
+| AICTX-01 | Phase 3 | Pending |
+| AICTX-02 | Phase 3 | Pending |
+| AICTX-03 | Phase 3 | Pending |
+| AICTX-04 | Phase 3 | Pending |
+| UI-04 | Phase 3 | Pending |
+| UI-10 | Phase 3 | Pending |
+| RT-01 | Phase 4 | Pending |
+| RT-02 | Phase 4 | Pending |
+| RT-03 | Phase 4 | Pending |
+| RT-04 | Phase 4 | Pending |
+| UI-01 | Phase 4 | Pending |
+| UI-02 | Phase 4 | Pending |
+| UI-03 | Phase 4 | Pending |
+| UI-06 | Phase 4 | Pending |
 
 ---
 *Requirements defined: 2026-03-26*
+*Traceability filled: 2026-03-26*
 *Source: FIKA AI Builder application — portfolio optimization milestone*

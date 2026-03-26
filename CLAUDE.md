@@ -463,3 +463,285 @@ Classify every issue by severity. State handoff status explicitly at the end.
 8. **Debugging agent owns all failures.** Builder does not self-debug mid-build. Surface failures to the debugging agent.
 9. **WCAG 2.1 AA is the floor.** Non-negotiable.
 10. **Demo must run locally with zero external dependencies at demo time.** All credentials in `.env.local`. n8n running. Supabase connected. No live builds, no cold starts.
+
+<!-- GSD:project-start source:PROJECT.md -->
+## Project
+
+**AI-Native Nurse Context Engine — v2 Milestone**
+
+A living patient context system that gives nurses instant situational awareness — eliminating the cognitive reconstruction work that consumes 30-40% of every shift. Built as a portfolio centerpiece for the FIKA Cannabis AI Builder application, where the structural analogy between nursing workflows and cannabis retail guest experiences is the core argument.
+
+The system takes nurse dictation, structures it into SOAP notes via Claude API, auto-generates supply checklists per procedure, and produces shift handoff reports with priority flags. Three demo scenarios (stable patient, flagged anomaly, dynamic handoff) run end-to-end through a Next.js frontend, n8n automation backend, and Supabase database.
+
+**Core Value:** The CEO of FIKA watches the demo video, clicks the live link, and thinks: "This is already 80% of what we need, just in a different domain." Every improvement must make that reaction more inevitable.
+
+### Constraints
+
+- **Stack**: Next.js 14+ (App Router), Tailwind CSS, TypeScript, Supabase, n8n, Claude API — no stack changes
+- **Deployment**: Vercel (frontend) + cloud n8n — must remain live and functional after changes
+- **Accessibility**: WCAG 2.1 AA — non-negotiable (clinical tool for 12-hour shifts)
+- **Browser**: Chrome primary, Firefox secondary, desktop only
+- **Design**: Color carries only meaning (flag=amber, critical=red, safe=green). No decorative color. Clinical, white, high-contrast.
+- **AI boundary**: AI flags but never acts. Every clinical decision requires human confirmation.
+<!-- GSD:project-end -->
+
+<!-- GSD:stack-start source:codebase/STACK.md -->
+## Technology Stack
+
+## Languages
+- TypeScript ~5.x - All frontend source code (`src/**/*.ts`, `src/**/*.tsx`)
+- SQL - Supabase migrations (`supabase/migrations/001_enable_rls.sql`)
+- JSON - n8n workflow definitions (`n8n-workflow.json`, `n8n-workflow-supply-lookup.json`)
+## Runtime
+- Node.js (version not pinned; no `.nvmrc` or `.node-version` present)
+- Browser: Chrome primary, Firefox secondary (desktop only)
+- npm
+- Lockfile: `src/package-lock.json` (present)
+## Frameworks
+- Next.js 16.1.6 - App Router, React Server Components capable but currently all pages use `'use client'`
+- React 19.2.3 - UI rendering
+- React DOM 19.2.3 - DOM binding
+- Tailwind CSS v4 - Utility-first CSS via PostCSS plugin (`@tailwindcss/postcss`)
+- PostCSS - Build pipeline for Tailwind (`src/postcss.config.mjs`)
+- ESLint v9 - Code quality
+- eslint-config-next 16.1.6 - Next.js-specific rules (core-web-vitals + typescript presets)
+- Turbopack - Next.js dev server bundler (enabled in `src/next.config.ts` via `turbopack.root`)
+- TypeScript ~5.x - Type checking, target ES2017, bundler module resolution
+## Key Dependencies
+- `@supabase/supabase-js` ^2.98.0 - Supabase client for database reads from frontend (`src/lib/supabase.ts`)
+- `next` 16.1.6 - Application framework
+- `react` 19.2.3 - UI library
+- `@tailwindcss/postcss` ^4 - Tailwind CSS PostCSS integration
+- `@types/node` ^20 - Node.js type definitions
+- `@types/react` ^19 - React type definitions
+- `@types/react-dom` ^19 - ReactDOM type definitions
+- `eslint` ^9 - Linter
+- `eslint-config-next` 16.1.6 - Next.js ESLint config
+- `tailwindcss` ^4 - CSS framework
+- `typescript` ^5 - TypeScript compiler
+## Configuration
+- Config: `src/tsconfig.json`
+- Strict mode enabled
+- Path alias: `@/*` maps to `src/*`
+- JSX: react-jsx
+- Module resolution: bundler
+- Config: `src/next.config.ts`
+- Turbopack enabled with root directory set
+- No custom rewrites, redirects, or middleware
+- Config: `src/eslint.config.mjs`
+- Extends: `eslint-config-next/core-web-vitals` and `eslint-config-next/typescript`
+- Global ignores: `.next/`, `out/`, `build/`, `next-env.d.ts`
+- Config: `src/postcss.config.mjs`
+- Single plugin: `@tailwindcss/postcss`
+- Configured inline in `src/app/globals.css` using `@theme inline` block
+- Design tokens defined as CSS custom properties (semantic color system)
+- `.env` file present at project root (contains Supabase and API credentials)
+- Frontend env vars use `NEXT_PUBLIC_` prefix:
+- n8n env vars (configured in n8n, not Next.js):
+## Build & Scripts
+## Platform Requirements
+- Node.js (recent LTS recommended, version not pinned)
+- n8n instance running locally or in cloud (self-hosted at `localhost:5678`)
+- Supabase project with seeded data (4 tables: patients, notes, supply_requests, handoff_reports)
+- Anthropic API key for Claude claude-sonnet-4-20250514
+- Local only (demo project). No production deployment target.
+- Vercel config directory exists (`.vercel/`) but deployment is local-only per project constraints.
+<!-- GSD:stack-end -->
+
+<!-- GSD:conventions-start source:CONVENTIONS.md -->
+## Conventions
+
+## Naming Patterns
+- Components: PascalCase single-word or compound names — `PatientCard.tsx`, `FlagBadge.tsx`, `DictationInput.tsx`, `StructuredNote.tsx`, `ProcedureSearch.tsx`
+- Library/utility files: kebab-case — `demo-scripts.ts`, `format-time.ts`, `supabase.ts`
+- Type definitions: kebab-case — `types.ts`
+- Pages: Next.js App Router convention — `page.tsx` inside route directories (`src/app/page.tsx`, `src/app/patient/[id]/page.tsx`)
+- Config files: standard naming — `next.config.ts`, `tsconfig.json`, `eslint.config.mjs`, `postcss.config.mjs`
+- Use PascalCase for component names: `DictationInput`, `FlagBadge`, `HandoffReport`
+- Named exports only (no default exports for components): `export function PatientCard(...)` in `src/components/PatientCard.tsx`
+- Page components use default exports: `export default function Dashboard()` in `src/app/page.tsx`
+- camelCase for all functions: `fetchData`, `startDictation`, `submitDictation`, `toggleItem`, `markAllReady`, `handleAction`
+- Event handlers prefixed with `handle` or action verbs: `handleDictationResult`, `handleSubmit`, `handleAction`
+- Helper functions use descriptive camelCase: `getAge`, `formatTimestamp`, `formatNoteTimestamp`, `formatNoteLabel`
+- camelCase for all variables: `patientId`, `activeTab`, `generatingHandoff`, `handoffError`
+- State variables use descriptive names: `highlightedNoteId`, `selectedScript`, `handoffExtras`
+- Boolean state uses `is`/`has` prefix or descriptive adjective: `allReady`, `allConfirmed`, `hasCriticalFlag`, `hasWarningFlag`
+- PascalCase for all types and interfaces: `Patient`, `Note`, `SupplyItem`, `WebhookResponse`
+- Use `interface` for object shapes (not `type`): all domain types in `src/lib/types.ts` use `interface`
+- Use `type` only for union types and aliases: `type Tab = 'notes' | 'supplies' | 'handoff'`, `type DictationState = 'idle' | 'animating' | 'processing' | 'complete' | 'error'`
+- Props interfaces named `{ComponentName}Props`: `DictationInputProps`, `FlagBadgeProps`, `PatientCardProps`, `HandoffReportProps`
+- Semantic token names in globals.css: `--color-background`, `--color-surface`, `--color-primary`, `--color-accent`, `--color-flag-warning`
+- Tailwind classes reference semantic tokens: `text-primary`, `bg-surface`, `border-border`, `text-flag-critical`
+- Never use raw hex values in components — all colors go through the design token layer in `src/app/globals.css`
+## Code Style
+- No explicit Prettier config — relies on default formatting
+- 2-space indentation in TypeScript/TSX files
+- Single quotes for string literals in TypeScript
+- Double quotes in JSX attributes (standard JSX convention)
+- No semicolons (semicolon-free style throughout the codebase)
+- Trailing commas in multi-line constructs
+- ESLint 9 with flat config: `src/eslint.config.mjs`
+- Extends `eslint-config-next/core-web-vitals` and `eslint-config-next/typescript`
+- Run with: `npm run lint` (which runs `eslint`)
+- `@/*` maps to `src/*` (configured in `src/tsconfig.json`)
+- Use `@/lib/...` for library code: `@/lib/supabase`, `@/lib/types`, `@/lib/demo-scripts`
+- Use `@/components/...` for components: `@/components/PatientCard`, `@/components/FlagBadge`
+- Relative imports (`./FlagBadge`) used only when importing sibling components within the same directory
+## Component Patterns
+- All components are functional (no class components)
+- Client components marked with `'use client'` directive at the top of every component file and every page file
+- The only server component is `src/app/layout.tsx` (the root layout)
+- Props defined as an `interface` immediately above the component:
+- Props destructured in the function signature, never accessed via `props.xxx`
+- Local state only via `useState` — no global state management library
+- State union types for multi-step flows: `type DictationState = 'idle' | 'animating' | 'processing' | 'complete' | 'error'`
+- Derived state computed inline or via `useMemo`:
+- Direct Supabase client queries in `useEffect` or `useCallback` within components
+- `Promise.all` for parallel fetches in `src/app/patient/[id]/page.tsx`
+- No dedicated data fetching hooks or abstraction layer
+- Webhook calls via native `fetch` — no axios or other HTTP client
+- `useEffect` for initial data loading with empty dependency array or `useCallback` reference
+- `useCallback` for functions referenced in dependency arrays: `fetchData` in patient detail page
+- Ternary for simple conditions: `{loading ? <Skeleton /> : <Content />}`
+- `&&` for optional rendering: `{note.flagged && <FlagAlert />}`
+- Early returns for loading/error/not-found states in page components
+## TypeScript Usage
+- `strict: true` in `src/tsconfig.json`
+- Target: ES2017
+- Module resolution: bundler
+- Non-null assertion for env vars: `process.env.NEXT_PUBLIC_SUPABASE_URL!`
+- Type casting for route params: `const patientId = params.id as string`
+- Inline type annotations for state: `useState<Patient | null>(null)`, `useState<Record<string, Note | null>>({})`
+- Union string literal types for enums: `type Tab = 'notes' | 'supplies' | 'handoff'`
+- `Record<string, T>` for key-value maps: `Record<string, string>`, `Record<number, boolean>`
+- `interface` for all object shapes (domain models, props, API responses)
+- `type` for union types and aliases only
+- All shared types centralized in `src/lib/types.ts`
+## Error Handling
+- try/catch around all `fetch` calls
+- Error state stored in component state: `const [error, setError] = useState<string | null>(null)`
+- `instanceof Error` check for error message extraction:
+- Error UI rendered inline with red/critical styling using `bg-flag-critical-bg` and `text-flag-critical`
+- No global error boundary
+- No error logging service — errors surface in UI only
+- Supabase query errors silently ignored (no `.catch` or error handling on Supabase reads)
+## Logging
+- Minimal logging — only one `console.log` in the codebase (`src/components/NurseActionBar.tsx` line 156)
+- No structured logging, no log levels
+## Comments & Documentation
+- JSDoc used sparingly — only on utility functions in `src/lib/format-time.ts`:
+- Inline comments for non-obvious logic: `// Correlate notes to supply_requests by timestamp proximity (within 120s)`
+- Section comments in JSX for layout regions: `{/* Back nav */}`, `{/* Left sidebar -- Patient Info */}`, `{/* Center -- Tabbed content */}`
+- No JSDoc on components or props interfaces
+- Not used on components, interfaces, or most functions
+- Use JSDoc only when the function behavior is non-obvious (format functions, utility helpers)
+## Styling Patterns
+- Tailwind CSS v4 with semantic design tokens defined in `src/app/globals.css` using `@theme inline`
+- All styling via Tailwind utility classes — no CSS modules, no styled-components
+- Conditional classes via template literals:
+- No `clsx` or `cn` utility — raw template literal string concatenation
+- Card containers: `bg-surface border border-border rounded-lg p-5`
+- Section headers: `text-xs font-medium uppercase tracking-wide text-secondary`
+- Primary buttons: `bg-accent text-accent-foreground hover:bg-accent-hover focus-visible:ring-2 focus-visible:ring-accent`
+- Transitions: `transition-colors duration-150`
+- Focus states: `focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2`
+- ARIA attributes on interactive elements: `role="tab"`, `aria-selected`, `aria-controls`, `role="status"`, `role="alert"`, `role="checkbox"`, `aria-checked`, `aria-label`, `aria-busy`
+- `sr-only` class for screen-reader-only content
+- `aria-hidden="true"` on decorative SVG icons
+- `<html lang="en">` set in layout
+- Semantic HTML elements: `<article>`, `<aside>`, `<header>`, `<main>`, `<nav>` (via Link), `<dl>/<dt>/<dd>`, `<table>`, `<time>`, `<ol>/<ul>`
+<!-- GSD:conventions-end -->
+
+<!-- GSD:architecture-start source:ARCHITECTURE.md -->
+## Architecture
+
+## Pattern Overview
+- Next.js App Router frontend with all pages marked `'use client'` -- effectively a React SPA
+- No server-side API routes; all backend logic lives in n8n workflows (self-hosted automation platform)
+- Supabase serves as both the database and the direct-read data layer for the frontend
+- AI processing (Claude API) happens exclusively inside n8n, never from the frontend
+- Two separate n8n workflows handle the two main automation paths
+## Layers
+- Purpose: Render patient data, accept nurse input, display AI-processed outputs
+- Location: `src/app/` (pages), `src/components/` (UI components)
+- Contains: React client components, Tailwind-styled UI, typewriter animation logic
+- Depends on: Supabase JS client for reads, n8n webhooks for writes/AI processing
+- Used by: End user (nurse) via browser
+- Purpose: Receive nurse input, orchestrate Claude API calls, write results to Supabase
+- Location: `n8n-workflow.json` (main pipeline), `n8n-workflow-supply-lookup.json` (standalone supply lookup)
+- Contains: Webhook endpoints, input parsing, Supabase REST calls, Claude API prompts, response routing
+- Depends on: Supabase REST API, Claude API (Anthropic)
+- Used by: Frontend via HTTP POST to webhook URLs
+- Purpose: Persistent storage for patients, notes, supply requests, handoff reports
+- Location: Cloud-hosted Supabase project; schema defined in `supabase/migrations/001_enable_rls.sql`
+- Contains: 4 tables with RLS policies
+- Depends on: Nothing (source of truth)
+- Used by: Frontend (SELECT via JS client), n8n (SELECT + INSERT via REST API)
+- Purpose: Define TypeScript interfaces for all data models and API responses
+- Location: `src/lib/types.ts`
+- Contains: `Patient`, `Note`, `StructuredNote`, `SupplyItem`, `SupplyRequest`, `HandoffReport`, `PriorityFlag`, `WebhookResponse`, `SupplyLookupResponse`
+- Used by: All frontend components and pages
+## Data Flow
+- All persistent state lives in Supabase; frontend re-fetches after every mutation
+- Local component state manages UI concerns: active tab, loading states, animation progress, confirmed supply items
+- `handoffExtras` (stable_items, recommended_first_actions) stored in React state only -- lost on page refresh
+- No global state management library (no Redux, Zustand, etc.)
+- Patient data, notes, supplies, and handoffs fetched via `Promise.all` in `fetchData()` callback
+## Key Abstractions
+- Purpose: Unified response contract from n8n back to frontend
+- Definition: `src/lib/types.ts` (lines 73-94)
+- Pattern: Contains required `note` field plus optional `supply_list` and `handoff_report` depending on flow
+- Purpose: AI-structured clinical note with Subjective, Objective, Assessment, Plan sections
+- Definition: `src/lib/types.ts` (lines 12-20)
+- Pattern: Extended SOAP with optional HPI, comorbidities, and interventions fields
+- Purpose: Pre-scripted dictation text for each patient scenario
+- Definition: `src/lib/demo-scripts.ts`
+- Pattern: Record keyed by patient UUID, with `_alt` and `_change` suffixes for alternative scenarios
+- Purpose: Visual indicator for clinical flag severity
+- Definition: `src/components/FlagBadge.tsx`
+- Pattern: Three-state badge (safe/warning/critical) with semantic colors
+## Entry Points
+- Location: `src/app/page.tsx`
+- Triggers: Browser navigates to `/`
+- Responsibilities: Fetch all patients + latest note per patient from Supabase, render PatientCard grid
+- Location: `src/app/patient/[id]/page.tsx`
+- Triggers: Browser navigates to `/patient/{uuid}`
+- Responsibilities: Fetch patient + all notes/supplies/handoffs, render three-column layout with tabs, handle dictation submission and handoff generation
+- Location: `n8n-workflow.json` (node N1)
+- Triggers: POST to `http://localhost:5678/webhook/nurse-context`
+- Responsibilities: Route between note processing, supply generation, and handoff report generation
+- Location: `n8n-workflow-supply-lookup.json` (node S1)
+- Triggers: POST to `http://localhost:5678/webhook/supply-lookup`
+- Responsibilities: Standalone procedure-to-supply-list generation
+## Error Handling
+- Frontend wraps webhook calls in try/catch, displays error string in a red alert box (`flag-critical-bg` styling)
+- n8n webhook errors surface as HTTP status codes; frontend checks `response.ok`
+- No retry logic anywhere in the stack
+- No error boundary components in React
+- Supabase query failures are silently ignored (no error handling on `{ data }` destructuring)
+- NurseActionBar actions (approve/escalate/override) only log to console -- no backend persistence
+## Cross-Cutting Concerns
+- Frontend reads `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_N8N_WEBHOOK_URL`, `NEXT_PUBLIC_N8N_WEBHOOK_URL_SUPPLY` from environment
+- n8n reads `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `ANTHROPIC_API_KEY` from its own environment
+- Fallback webhook URLs hardcoded to `localhost:5678` in components
+<!-- GSD:architecture-end -->
+
+<!-- GSD:workflow-start source:GSD defaults -->
+## GSD Workflow Enforcement
+
+Before using Edit, Write, or other file-changing tools, start work through a GSD command so planning artifacts and execution context stay in sync.
+
+Use these entry points:
+- `/gsd:quick` for small fixes, doc updates, and ad-hoc tasks
+- `/gsd:debug` for investigation and bug fixing
+- `/gsd:execute-phase` for planned phase work
+
+Do not make direct repo edits outside a GSD workflow unless the user explicitly asks to bypass it.
+<!-- GSD:workflow-end -->
+
+<!-- GSD:profile-start -->
+## Developer Profile
+
+> Profile not yet configured. Run `/gsd:profile-user` to generate your developer profile.
+> This section is managed by `generate-claude-profile` -- do not edit manually.
+<!-- GSD:profile-end -->
