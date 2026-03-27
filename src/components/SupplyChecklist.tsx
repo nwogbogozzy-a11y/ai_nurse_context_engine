@@ -2,26 +2,59 @@
 
 import { useState } from 'react'
 import { SupplyItem } from '@/lib/types'
+import { supabase } from '@/lib/supabase'
+import { toast } from 'sonner'
 
 interface SupplyChecklistProps {
+  supplyRequestId: string
   procedure: string
   items: SupplyItem[]
   generatedAt: string
+  initialConfirmedItems?: Record<number, boolean>
 }
 
-export function SupplyChecklist({ procedure, items, generatedAt }: SupplyChecklistProps) {
-  const [confirmed, setConfirmed] = useState<Record<number, boolean>>({})
+export function SupplyChecklist({ supplyRequestId, procedure, items, generatedAt, initialConfirmedItems }: SupplyChecklistProps) {
+  const [confirmed, setConfirmed] = useState<Record<number, boolean>>(initialConfirmedItems || {})
   const [allReady, setAllReady] = useState(false)
 
-  const toggleItem = (index: number) => {
-    setConfirmed(prev => ({ ...prev, [index]: !prev[index] }))
+  const toggleItem = async (index: number) => {
+    const prev = { ...confirmed }
+    const wasConfirmed = confirmed[index]
+    const newConfirmed = { ...confirmed, [index]: !confirmed[index] }
+    setConfirmed(newConfirmed)
+
+    const { error } = await supabase
+      .from('supply_requests')
+      .update({ confirmed_items: newConfirmed })
+      .eq('id', supplyRequestId)
+
+    if (error) {
+      setConfirmed(prev)
+      toast.error('Failed to save confirmation')
+    } else if (!wasConfirmed) {
+      toast.success('Item confirmed')
+    }
   }
 
-  const markAllReady = () => {
+  const markAllReady = async () => {
+    const prev = { ...confirmed }
     const all: Record<number, boolean> = {}
     items.forEach((_, i) => { all[i] = true })
     setConfirmed(all)
     setAllReady(true)
+
+    const { error } = await supabase
+      .from('supply_requests')
+      .update({ confirmed_items: all })
+      .eq('id', supplyRequestId)
+
+    if (error) {
+      setConfirmed(prev)
+      setAllReady(false)
+      toast.error('Failed to save confirmation')
+    } else {
+      toast.success('All supplies marked ready')
+    }
   }
 
   const allConfirmed = items.every((_, i) => confirmed[i])

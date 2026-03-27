@@ -3,17 +3,19 @@
 import { useState, useRef, useCallback } from 'react'
 import { DEMO_SCRIPTS } from '@/lib/demo-scripts'
 import { WebhookResponse } from '@/lib/types'
+import { useNurse } from '@/contexts/NurseContext'
+import { toast } from 'sonner'
 
 interface DictationInputProps {
   patientId: string
   patientName: string
-  shift: string
   onResult: (result: WebhookResponse) => void
 }
 
 type DictationState = 'idle' | 'animating' | 'processing' | 'complete' | 'error'
 
-export function DictationInput({ patientId, patientName, shift, onResult }: DictationInputProps) {
+export function DictationInput({ patientId, patientName, onResult }: DictationInputProps) {
+  const { nurse, setIsDictating } = useNurse()
   const [state, setState] = useState<DictationState>('idle')
   const [text, setText] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -36,6 +38,7 @@ export function DictationInput({ patientId, patientName, shift, onResult }: Dict
     const script = DEMO_SCRIPTS[selectedScript]
     if (!script) return
 
+    setIsDictating(true)
     setState('animating')
     setText('')
     setError(null)
@@ -50,7 +53,7 @@ export function DictationInput({ patientId, patientName, shift, onResult }: Dict
         submitDictation(script)
       }
     }, 40)
-  }, [selectedScript, patientId])
+  }, [selectedScript, patientId, setIsDictating])
 
   const submitDictation = async (rawInput: string) => {
     setState('processing')
@@ -64,8 +67,8 @@ export function DictationInput({ patientId, patientName, shift, onResult }: Dict
         body: JSON.stringify({
           patient_id: patientId,
           raw_input: rawInput,
-          nurse_name: 'Sarah Chen',
-          shift: shift,
+          nurse_name: nurse.name,
+          shift: nurse.shift,
           input_type: 'note',
         }),
       })
@@ -74,20 +77,26 @@ export function DictationInput({ patientId, patientName, shift, onResult }: Dict
 
       const result: WebhookResponse = await response.json()
       setState('complete')
+      setIsDictating(false)
       onResult(result)
     } catch (err) {
       setState('error')
-      setError(err instanceof Error ? err.message : 'Failed to process dictation')
+      setIsDictating(false)
+      const message = err instanceof Error ? err.message : 'Failed to process dictation'
+      setError(message)
+      toast.error('Failed to process dictation. Check that n8n is running.', { duration: Infinity })
     }
   }
 
   const handleFreeFormSubmit = () => {
     if (!text.trim()) return
+    setIsDictating(true)
     submitDictation(text)
   }
 
   const reset = () => {
     if (animationRef.current) clearInterval(animationRef.current)
+    setIsDictating(false)
     setState('idle')
     setText('')
     setError(null)
@@ -151,11 +160,17 @@ export function DictationInput({ patientId, patientName, shift, onResult }: Dict
       )}
 
       {state === 'error' && (
-        <div className="flex items-center gap-2 mt-3 p-3 bg-flag-critical-bg rounded-lg">
+        <div className="flex items-center gap-2 mt-3 p-3 bg-flag-critical-bg rounded-lg" role="alert">
           <svg className="w-4 h-4 text-flag-critical shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
           </svg>
           <span className="text-sm text-flag-critical">{error}</span>
+          <button
+            onClick={() => { setError(null); setState('idle') }}
+            className="ml-auto px-3 py-1 text-sm font-medium rounded-lg border border-flag-critical text-flag-critical hover:bg-flag-critical hover:text-accent-foreground transition-colors duration-150"
+          >
+            Retry
+          </button>
         </div>
       )}
 
@@ -169,7 +184,7 @@ export function DictationInput({ patientId, patientName, shift, onResult }: Dict
       )}
 
       <div className="flex items-center justify-between mt-4">
-        <p className="text-xs text-muted">Patient: {patientName} | Shift: {shift}</p>
+        <p className="text-xs text-muted">Patient: {patientName} | Shift: {nurse.shift}</p>
         <div className="flex items-center gap-2">
           {(state === 'complete' || state === 'error') && (
             <button

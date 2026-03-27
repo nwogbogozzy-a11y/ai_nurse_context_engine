@@ -11,12 +11,15 @@ import { StructuredNote } from '@/components/StructuredNote'
 import { SupplyChecklist } from '@/components/SupplyChecklist'
 import { ProcedureSearch } from '@/components/ProcedureSearch'
 import { HandoffReport } from '@/components/HandoffReport'
+import { useNurse } from '@/contexts/NurseContext'
+import { toast } from 'sonner'
 
 type Tab = 'notes' | 'supplies' | 'handoff'
 
 export default function PatientDetail() {
   const params = useParams()
   const patientId = params.id as string
+  const { nurse } = useNurse()
 
   const [patient, setPatient] = useState<Patient | null>(null)
   const [notes, setNotes] = useState<Note[]>([])
@@ -26,7 +29,6 @@ export default function PatientDetail() {
   const [loading, setLoading] = useState(true)
   const [generatingHandoff, setGeneratingHandoff] = useState(false)
   const [handoffError, setHandoffError] = useState<string | null>(null)
-  const [handoffExtras, setHandoffExtras] = useState<Record<string, { stable_items: string[]; recommended_first_actions: string[] }>>({})
   const [highlightedNoteId, setHighlightedNoteId] = useState<string | null>(null)
 
   // Correlate notes to supply_requests by timestamp proximity (within 120s)
@@ -95,33 +97,20 @@ export default function PatientDetail() {
         body: JSON.stringify({
           patient_id: patientId,
           raw_input: lastNote?.raw_input || patient.current_status,
-          nurse_name: 'Sarah Chen',
-          shift: 'day',
+          nurse_name: nurse.name,
+          shift: nurse.shift,
           input_type: 'handoff',
         }),
       })
 
       if (!response.ok) throw new Error('Failed to generate handoff report')
 
-      const result: WebhookResponse = await response.json()
-
       await fetchData()
-
-      // Store the extra handoff fields that aren't in the DB
-      if (result.handoff_report) {
-        // Match by patient_id — the latest handoff just created
-        setHandoffExtras(prev => ({
-          ...prev,
-          [patientId]: {
-            stable_items: result.handoff_report!.stable_items || [],
-            recommended_first_actions: result.handoff_report!.recommended_first_actions || [],
-          }
-        }))
-      }
-
       setActiveTab('handoff')
+      toast.success('Handoff report generated')
     } catch (err) {
       setHandoffError(err instanceof Error ? err.message : 'Failed to generate handoff report. Check that n8n is running.')
+      toast.error('Failed to generate handoff report. Check that n8n is running.', { duration: Infinity })
     } finally {
       setGeneratingHandoff(false)
     }
@@ -188,11 +177,11 @@ export default function PatientDetail() {
             </div>
             <div>
               <dt className="text-xs font-medium uppercase tracking-wide text-secondary">Date of Birth</dt>
-              <dd className="text-sm text-primary mt-0.5">{new Date(patient.date_of_birth).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</dd>
+              <dd className="text-sm text-primary mt-0.5" suppressHydrationWarning>{new Date(patient.date_of_birth).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</dd>
             </div>
             <div>
               <dt className="text-xs font-medium uppercase tracking-wide text-secondary">Admitted</dt>
-              <dd className="text-sm text-primary mt-0.5">{new Date(patient.admission_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</dd>
+              <dd className="text-sm text-primary mt-0.5" suppressHydrationWarning>{new Date(patient.admission_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</dd>
             </div>
             <div>
               <dt className="text-xs font-medium uppercase tracking-wide text-secondary">Current Status</dt>
@@ -297,9 +286,11 @@ export default function PatientDetail() {
                   supplies.map((supply) => (
                     <SupplyChecklist
                       key={supply.id}
+                      supplyRequestId={supply.id}
                       procedure={supply.procedure}
                       items={supply.items}
                       generatedAt={new Date(supply.generated_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
+                      initialConfirmedItems={supply.confirmed_items || {}}
                     />
                   ))
                 )}
@@ -312,21 +303,18 @@ export default function PatientDetail() {
                   <p className="text-secondary">No handoff reports yet. Click &ldquo;Generate Handoff Report&rdquo; in the sidebar to create one.</p>
                 </div>
               ) : (
-                handoffs.map((report, i) => {
-                  const extras = i === 0 ? handoffExtras[patientId] : undefined
-                  return (
-                    <HandoffReport
-                      key={report.id}
-                      patientName={patient.full_name}
-                      summary={report.summary}
-                      priorityFlags={report.flags || []}
-                      stableItems={extras?.stable_items || []}
-                      recommendedFirstActions={extras?.recommended_first_actions || []}
-                      generatedAt={new Date(report.generated_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) + ' ' + new Date(report.generated_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
-                      incomingShift="Night"
-                    />
-                  )
-                })
+                handoffs.map((report) => (
+                  <HandoffReport
+                    key={report.id}
+                    patientName={patient.full_name}
+                    summary={report.summary}
+                    priorityFlags={report.flags || []}
+                    stableItems={report.stable_items || []}
+                    recommendedFirstActions={report.recommended_first_actions || []}
+                    generatedAt={new Date(report.generated_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) + ' ' + new Date(report.generated_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                    incomingShift={nurse.shift === 'Night' ? 'Morning' : 'Night'}
+                  />
+                ))
               )
             )}
           </div>
@@ -337,7 +325,6 @@ export default function PatientDetail() {
           <DictationInput
             patientId={patientId}
             patientName={patient.full_name}
-            shift="day"
             onResult={handleDictationResult}
           />
         </div>
