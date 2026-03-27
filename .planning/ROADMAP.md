@@ -27,7 +27,12 @@
   3. Supply checklist confirmation state survives page refresh; confirmed items remain confirmed
   4. Handoff report's stable items and recommended first actions are visible after page reload (not lost on navigation)
   5. Submitting free-form text through the dictation panel produces a structured SOAP note identical in quality to the pre-scripted typewriter path; webhook errors display an actionable message with a retry option rather than silently failing
-**Plans**: TBD
+**Plans**: 4 plans
+Plans:
+- [ ] 01-01-PLAN.md -- Schema migrations, type updates, Sonner install
+- [ ] 01-02-PLAN.md -- Nurse identity context and header switcher
+- [ ] 01-03-PLAN.md -- Dictation mode selector with free-form entry
+- [ ] 01-04-PLAN.md -- Persistence wiring, toast feedback, error states
 **UI hint**: yes
 
 ---
@@ -78,7 +83,7 @@
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Functional Foundation | 0/? | Not started | - |
+| 1. Functional Foundation | 0/4 | Not started | - |
 | 2. Compliance and Audit Trail | 0/? | Not started | - |
 | 3. AI Context Memory | 0/? | Not started | - |
 | 4. Real-Time System and UI Overhaul | 0/? | Not started | - |
