@@ -4,14 +4,14 @@
 
 ### Functional Foundation
 
-- [ ] **FOUND-01**: Nurse can switch active identity via dropdown (predefined nurses: Sarah Chen - Night, Marcus Webb - Morning) and all subsequent actions are attributed to the selected nurse
+- [x] **FOUND-01**: Nurse can switch active identity via dropdown (predefined nurses: Sarah Chen - Night, Marcus Webb - Morning) and all subsequent actions are attributed to the selected nurse
 - [ ] **FOUND-02**: Nurse can approve a flagged note and the approval persists to Supabase (survives page refresh)
 - [ ] **FOUND-03**: Nurse can escalate a flagged note and the escalation persists to Supabase (survives page refresh)
 - [ ] **FOUND-04**: Nurse can override a flagged note and the override persists to Supabase (survives page refresh)
 - [x] **FOUND-05**: Supply requests are linked to notes via note_id foreign key (not timestamp proximity)
 - [x] **FOUND-06**: Handoff report extras (stable_items, recommended_first_actions) persist to Supabase and display on page reload
 - [x] **FOUND-07**: Supply checklist confirmation state persists to Supabase (survives page refresh)
-- [ ] **FOUND-08**: Dictation input supports both pre-scripted demo scenarios (typewriter animation) and free-form text entry that the nurse types directly — both paths submit to n8n and produce structured SOAP output
+- [x] **FOUND-08**: Dictation input supports both pre-scripted demo scenarios (typewriter animation) and free-form text entry that the nurse types directly — both paths submit to n8n and produce structured SOAP output
 
 ### Compliance & Accountability
 
@@ -72,14 +72,14 @@
 
 | REQ-ID | Phase | Status |
 |--------|-------|--------|
-| FOUND-01 | Phase 1 | Pending |
+| FOUND-01 | Phase 1 | Complete |
 | FOUND-02 | Phase 1 | Pending |
 | FOUND-03 | Phase 1 | Pending |
 | FOUND-04 | Phase 1 | Pending |
 | FOUND-05 | Phase 1 | Complete |
 | FOUND-06 | Phase 1 | Complete |
 | FOUND-07 | Phase 1 | Complete |
-| FOUND-08 | Phase 1 | Pending |
+| FOUND-08 | Phase 1 | Complete |
 | UI-07 | Phase 1 | Pending |
 | UI-08 | Phase 1 | Complete |
 | COMP-01 | Phase 2 | Pending |
