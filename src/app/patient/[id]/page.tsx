@@ -4,17 +4,19 @@ import { useEffect, useState, useCallback, useMemo } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
-import { Patient, Note, SupplyRequest, HandoffReport as HandoffReportType, WebhookResponse } from '@/lib/types'
+import { Patient, Note, SupplyRequest, HandoffReport as HandoffReportType, WebhookResponse, AuditLogEntry } from '@/lib/types'
 import { FlagBadge } from '@/components/FlagBadge'
 import { DictationInput } from '@/components/DictationInput'
 import { StructuredNote } from '@/components/StructuredNote'
 import { SupplyChecklist } from '@/components/SupplyChecklist'
 import { ProcedureSearch } from '@/components/ProcedureSearch'
 import { HandoffReport } from '@/components/HandoffReport'
+import { ActivityTimeline } from '@/components/ActivityTimeline'
 import { useNurse } from '@/contexts/NurseContext'
+import { insertAuditEntry } from '@/lib/audit'
 import { toast } from 'sonner'
 
-type Tab = 'notes' | 'supplies' | 'handoff'
+type Tab = 'notes' | 'supplies' | 'handoff' | 'activity'
 
 export default function PatientDetail() {
   const params = useParams()
@@ -30,6 +32,7 @@ export default function PatientDetail() {
   const [generatingHandoff, setGeneratingHandoff] = useState(false)
   const [handoffError, setHandoffError] = useState<string | null>(null)
   const [highlightedNoteId, setHighlightedNoteId] = useState<string | null>(null)
+  const [auditEntries, setAuditEntries] = useState<AuditLogEntry[]>([])
 
   // Correlate notes to supply_requests by timestamp proximity (within 120s)
   const noteProcedures = useMemo(() => {
@@ -50,17 +53,19 @@ export default function PatientDetail() {
   }, [notes, supplies])
 
   const fetchData = useCallback(async () => {
-    const [patientRes, notesRes, suppliesRes, handoffsRes] = await Promise.all([
+    const [patientRes, notesRes, suppliesRes, handoffsRes, auditRes] = await Promise.all([
       supabase.from('patients').select('*').eq('id', patientId).single(),
       supabase.from('notes').select('*').eq('patient_id', patientId).order('created_at', { ascending: false }),
       supabase.from('supply_requests').select('*').eq('patient_id', patientId).order('generated_at', { ascending: false }),
       supabase.from('handoff_reports').select('*').eq('patient_id', patientId).order('generated_at', { ascending: false }),
+      supabase.from('audit_log').select('*').eq('patient_id', patientId).order('created_at', { ascending: false }),
     ])
 
     if (patientRes.data) setPatient(patientRes.data)
     if (notesRes.data) setNotes(notesRes.data)
     if (suppliesRes.data) setSupplies(suppliesRes.data)
     if (handoffsRes.data) setHandoffs(handoffsRes.data)
+    if (auditRes.data) setAuditEntries(auditRes.data)
     setLoading(false)
   }, [patientId])
 
@@ -79,6 +84,20 @@ export default function PatientDetail() {
     if (latestNotes?.[0]) {
       setHighlightedNoteId(latestNotes[0].id)
       setTimeout(() => setHighlightedNoteId(null), 2000)
+
+      // Audit: create-note (fire-and-forget)
+      if (result.note) {
+        insertAuditEntry({
+          patientId,
+          nurseName: nurse.name,
+          actionType: 'create-note',
+          metadata: {
+            note_id: latestNotes[0].id,
+            flagged: result.note.flagged,
+            procedures: result.note.procedures,
+          },
+        })
+      }
     }
   }
 
@@ -108,6 +127,23 @@ export default function PatientDetail() {
       await fetchData()
       setActiveTab('handoff')
       toast.success('Handoff report generated')
+
+      // Audit: generate-handoff (fire-and-forget)
+      const { data: latestHandoff } = await supabase
+        .from('handoff_reports')
+        .select('id')
+        .eq('patient_id', patientId)
+        .order('generated_at', { ascending: false })
+        .limit(1)
+      insertAuditEntry({
+        patientId,
+        nurseName: nurse.name,
+        actionType: 'generate-handoff',
+        metadata: {
+          handoff_report_id: latestHandoff?.[0]?.id,
+          shift: nurse.shift,
+        },
+      })
     } catch (err) {
       setHandoffError(err instanceof Error ? err.message : 'Failed to generate handoff report. Check that n8n is running.')
       toast.error('Failed to generate handoff report. Check that n8n is running.', { duration: Infinity })
@@ -146,6 +182,7 @@ export default function PatientDetail() {
     { key: 'notes', label: 'Notes', count: notes.length },
     { key: 'supplies', label: 'Supply Requests', count: supplies.length },
     { key: 'handoff', label: 'Handoff Report', count: handoffs.length },
+    { key: 'activity' as Tab, label: 'Activity', count: auditEntries.length },
   ]
 
   return (
@@ -266,6 +303,7 @@ export default function PatientDetail() {
                     hasSupplyList={!!noteProcedures[note.id]?.length}
                     onSupplyClick={() => setActiveTab('supplies')}
                     isHighlighted={highlightedNoteId === note.id}
+                    onAction={fetchData}
                   />
                 ))
               )
@@ -316,6 +354,10 @@ export default function PatientDetail() {
                   />
                 ))
               )
+            )}
+
+            {activeTab === 'activity' && (
+              <ActivityTimeline entries={auditEntries} />
             )}
           </div>
         </div>
