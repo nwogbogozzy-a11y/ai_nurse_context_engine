@@ -153,7 +153,12 @@ export function StructuredNote({ note, noteNumber, procedures, hasSupplyList, on
 
       {note.flagged && (
         <div className="px-5 py-3 border-t border-border bg-background">
-          <NurseActionBar noteId={note.id} onAction={(action) => console.log(`Note ${note.id}: ${action}`)} />
+          <NurseActionBar
+            noteId={note.id}
+            initialReviewStatus={note.review_status}
+            initialReviewedBy={note.reviewed_by}
+            onAction={(action) => console.log(`Note ${note.id}: ${action}`)}
+          />
         </div>
       )}
     </div>
