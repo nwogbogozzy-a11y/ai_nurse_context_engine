@@ -13,14 +13,23 @@ interface StructuredNoteProps {
   hasSupplyList?: boolean
   onSupplyClick?: () => void
   isHighlighted?: boolean
+  onAction?: () => void
 }
 
-export function StructuredNote({ note, noteNumber, procedures, hasSupplyList, onSupplyClick, isHighlighted }: StructuredNoteProps) {
+const getBadgeType = (note: Note): 'safe' | 'warning' | 'critical' | 'under_review' | 'resolved' => {
+  if (note.review_status === 'resolved') return 'resolved'
+  if (note.review_status === 'under_review') return 'under_review'
+  if (note.review_status === 'approved') return 'safe'
+  if (note.flagged) {
+    return note.flag_reason?.toLowerCase().includes('critical') ? 'critical' : 'warning'
+  }
+  return 'safe'
+}
+
+export function StructuredNote({ note, noteNumber, procedures, hasSupplyList, onSupplyClick, isHighlighted, onAction }: StructuredNoteProps) {
   const [showRaw, setShowRaw] = useState(false)
 
-  const flagType = note.flagged
-    ? note.flag_reason?.toLowerCase().includes('critical') ? 'critical' : 'warning'
-    : 'safe'
+  const flagType = getBadgeType(note)
 
   // Supabase may return structured_note as a JSON string — parse if needed
   const parsed: StructuredNoteData | null = (() => {
@@ -151,9 +160,18 @@ export function StructuredNote({ note, noteNumber, procedures, hasSupplyList, on
         </div>
       )}
 
-      {note.flagged && (
+      {(note.flagged || note.review_status === 'under_review' || note.review_status === 'escalated') && (
         <div className="px-5 py-3 border-t border-border bg-background">
-          <NurseActionBar noteId={note.id} onAction={(action) => console.log(`Note ${note.id}: ${action}`)} />
+          <NurseActionBar
+            noteId={note.id}
+            patientId={note.patient_id}
+            initialReviewStatus={note.review_status}
+            initialReviewedBy={note.reviewed_by}
+            flagged={note.flagged}
+            onAction={() => {
+              if (onAction) onAction()
+            }}
+          />
         </div>
       )}
     </div>
