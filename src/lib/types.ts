@@ -29,6 +29,9 @@ export interface Note {
   flagged: boolean
   flag_reason: string
   created_at: string
+  review_status: 'pending' | 'approved' | 'escalated' | 'overridden'
+  reviewed_by: string | null
+  reviewed_at: string | null
 }
 
 export interface SupplyItem {
@@ -45,6 +48,8 @@ export interface SupplyRequest {
   items: SupplyItem[]
   generated_at: string
   confirmed_by: string | null
+  confirmed_items: Record<number, boolean>
+  note_id: string | null
 }
 
 export interface PriorityFlag {
@@ -60,6 +65,8 @@ export interface HandoffReport {
   flags: PriorityFlag[]
   generated_at: string
   shift_start: string
+  stable_items: string[]
+  recommended_first_actions: string[]
 }
 
 export interface SupplyLookupResponse {
