@@ -20,9 +20,17 @@ export function DictationInput({ patientId, patientName, shift, onResult }: Dict
   const [selectedScript, setSelectedScript] = useState<string>(patientId)
   const animationRef = useRef<NodeJS.Timeout | null>(null)
 
+  const isFreeForm = selectedScript === 'free-form'
+
   const availableScripts = Object.entries(DEMO_SCRIPTS).filter(([key]) =>
     key.startsWith(patientId)
   )
+
+  const getScriptLabel = (key: string): string => {
+    if (key.endsWith('_change')) return 'Vitals change (18:45)'
+    if (key.endsWith('_alt')) return 'Follow-up observation'
+    return 'Primary observation'
+  }
 
   const startDictation = useCallback(() => {
     const script = DEMO_SCRIPTS[selectedScript]
@@ -47,7 +55,6 @@ export function DictationInput({ patientId, patientName, shift, onResult }: Dict
   const submitDictation = async (rawInput: string) => {
     setState('processing')
 
-    const isHandoff = selectedScript.includes('handoff')
     const webhookUrl = process.env.NEXT_PUBLIC_N8N_WEBHOOK_URL || 'http://localhost:5678/webhook/nurse-context'
 
     try {
@@ -59,7 +66,7 @@ export function DictationInput({ patientId, patientName, shift, onResult }: Dict
           raw_input: rawInput,
           nurse_name: 'Sarah Chen',
           shift: shift,
-          input_type: isHandoff ? 'handoff' : 'note',
+          input_type: 'note',
         }),
       })
 
@@ -72,6 +79,11 @@ export function DictationInput({ patientId, patientName, shift, onResult }: Dict
       setState('error')
       setError(err instanceof Error ? err.message : 'Failed to process dictation')
     }
+  }
+
+  const handleFreeFormSubmit = () => {
+    if (!text.trim()) return
+    submitDictation(text)
   }
 
   const reset = () => {
@@ -87,20 +99,27 @@ export function DictationInput({ patientId, patientName, shift, onResult }: Dict
         Dictation Input
       </label>
 
-      {availableScripts.length > 1 && state === 'idle' && (
+      {state === 'idle' && (
         <div className="mb-3">
+          <label className="text-xs font-medium uppercase tracking-wide text-secondary mb-1.5 block">
+            Input Mode
+          </label>
           <select
             value={selectedScript}
-            onChange={(e) => setSelectedScript(e.target.value)}
+            onChange={(e) => {
+              setSelectedScript(e.target.value)
+              setText('')
+            }}
             className="w-full px-3 py-2 text-sm text-primary bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
+            aria-label="Select input mode"
           >
-            {availableScripts.map(([key, script]) => (
+            {availableScripts.map(([key]) => (
               <option key={key} value={key}>
-                {key.includes('_change') ? 'Vitals change (18:45)' :
-                 key.includes('_alt') ? 'Follow-up observation' :
-                 'Primary observation'}
+                {getScriptLabel(key)}
               </option>
             ))}
+            <option disabled>-----------</option>
+            <option value="free-form">Free-form entry</option>
           </select>
         </div>
       )}
@@ -108,10 +127,15 @@ export function DictationInput({ patientId, patientName, shift, onResult }: Dict
       <div className="relative">
         <textarea
           className="w-full min-h-[120px] p-4 text-base leading-relaxed text-primary bg-background border border-border rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent disabled:bg-surface disabled:text-secondary"
-          placeholder="Begin dictation or type observation..."
+          placeholder={isFreeForm ? 'Type your clinical observation...' : 'Select a script and begin dictation...'}
           value={text}
-          onChange={(e) => state === 'idle' && setText(e.target.value)}
-          disabled={state !== 'idle'}
+          onChange={(e) => {
+            if (isFreeForm && state === 'idle') {
+              setText(e.target.value)
+            }
+          }}
+          disabled={isFreeForm ? state !== 'idle' : state === 'processing' || state === 'complete' || state === 'error'}
+          readOnly={!isFreeForm}
           aria-busy={state === 'processing'}
         />
         {state === 'animating' && (
@@ -155,13 +179,22 @@ export function DictationInput({ patientId, patientName, shift, onResult }: Dict
               New Dictation
             </button>
           )}
-          {state === 'idle' && (
+          {state === 'idle' && !isFreeForm && (
             <button
               onClick={startDictation}
               disabled={!DEMO_SCRIPTS[selectedScript]}
               className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold rounded-lg bg-accent text-accent-foreground hover:bg-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150"
             >
               Begin Dictation
+            </button>
+          )}
+          {state === 'idle' && isFreeForm && (
+            <button
+              onClick={handleFreeFormSubmit}
+              disabled={!text.trim()}
+              className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold rounded-lg bg-accent text-accent-foreground hover:bg-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150"
+            >
+              Submit Note
             </button>
           )}
         </div>
