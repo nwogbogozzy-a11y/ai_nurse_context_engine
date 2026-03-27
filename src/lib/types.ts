@@ -19,6 +19,8 @@ export interface StructuredNote {
   plan: string
 }
 
+export type ReviewStatus = 'pending' | 'approved' | 'escalated' | 'overridden' | 'under_review' | 'resolved'
+
 export interface Note {
   id: string
   patient_id: string
@@ -29,7 +31,7 @@ export interface Note {
   flagged: boolean
   flag_reason: string
   created_at: string
-  review_status: 'pending' | 'approved' | 'escalated' | 'overridden'
+  review_status: ReviewStatus
   reviewed_by: string | null
   reviewed_at: string | null
 }
@@ -48,8 +50,6 @@ export interface SupplyRequest {
   items: SupplyItem[]
   generated_at: string
   confirmed_by: string | null
-  confirmed_items: Record<number, boolean>
-  note_id: string | null
 }
 
 export interface PriorityFlag {
@@ -65,16 +65,6 @@ export interface HandoffReport {
   flags: PriorityFlag[]
   generated_at: string
   shift_start: string
-  stable_items: string[]
-  recommended_first_actions: string[]
-}
-
-export interface SupplyLookupResponse {
-  success: boolean
-  supply_list: {
-    procedure: string
-    items: SupplyItem[]
-  }
 }
 
 export interface WebhookResponse {
@@ -98,4 +88,13 @@ export interface WebhookResponse {
     stable_items: string[]
     recommended_first_actions: string[]
   }
+}
+
+export interface AuditLogEntry {
+  id: string
+  patient_id: string
+  nurse_name: string
+  action_type: string
+  metadata: Record<string, unknown>
+  created_at: string
 }
