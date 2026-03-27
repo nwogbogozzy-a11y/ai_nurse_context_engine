@@ -17,6 +17,8 @@ export function PatientCard({ patient, latestNote }: PatientCardProps) {
   const flagType: 'safe' | 'warning' | 'critical' | 'under_review' | 'resolved' =
     reviewStatus === 'resolved' ? 'resolved'
     : reviewStatus === 'under_review' ? 'under_review'
+    : reviewStatus === 'approved' || reviewStatus === 'overridden' ? 'safe'
+    : reviewStatus === 'escalated' ? 'warning'
     : hasCriticalFlag ? 'critical'
     : hasWarningFlag ? 'warning'
     : 'safe'
