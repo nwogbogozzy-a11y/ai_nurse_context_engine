@@ -16,6 +16,10 @@
   --color-flag-critical-bg: #FEF2F2;
   --color-flag-safe: #10B981;
   --color-flag-safe-bg: #F0FDF4;
+  --color-flag-safe-hover: #DCFCE7;
+  --color-flag-review: #6366F1;
+  --color-flag-review-bg: #EEF2FF;
+  --color-flag-review-hover: #E0E7FF;
   --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
   --font-mono: ui-monospace, 'SF Mono', 'Cascadia Code', monospace;
 }

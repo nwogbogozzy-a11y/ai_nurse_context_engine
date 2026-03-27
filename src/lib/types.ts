@@ -19,6 +19,8 @@ export interface StructuredNote {
   plan: string
 }
 
+export type ReviewStatus = 'pending' | 'approved' | 'escalated' | 'overridden' | 'under_review' | 'resolved'
+
 export interface Note {
   id: string
   patient_id: string
@@ -29,6 +31,9 @@ export interface Note {
   flagged: boolean
   flag_reason: string
   created_at: string
+  review_status: ReviewStatus
+  reviewed_by: string | null
+  reviewed_at: string | null
 }
 
 export interface SupplyItem {
@@ -83,4 +88,13 @@ export interface WebhookResponse {
     stable_items: string[]
     recommended_first_actions: string[]
   }
+}
+
+export interface AuditLogEntry {
+  id: string
+  patient_id: string
+  nurse_name: string
+  action_type: string
+  metadata: Record<string, unknown>
+  created_at: string
 }
