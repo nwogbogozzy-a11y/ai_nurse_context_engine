@@ -32,7 +32,7 @@ Plans:
 - [x] 01-01-PLAN.md -- Schema migrations, type updates, Sonner install
 - [x] 01-02-PLAN.md -- Nurse identity context and header switcher
 - [x] 01-03-PLAN.md -- Dictation mode selector with free-form entry
-- [ ] 01-04-PLAN.md -- Persistence wiring, toast feedback, error states
+- [x] 01-04-PLAN.md -- Persistence wiring, toast feedback, error states
 **UI hint**: yes
 
 ---

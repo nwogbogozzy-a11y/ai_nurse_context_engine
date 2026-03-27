@@ -5,9 +5,9 @@
 ### Functional Foundation
 
 - [x] **FOUND-01**: Nurse can switch active identity via dropdown (predefined nurses: Sarah Chen - Night, Marcus Webb - Morning) and all subsequent actions are attributed to the selected nurse
-- [ ] **FOUND-02**: Nurse can approve a flagged note and the approval persists to Supabase (survives page refresh)
-- [ ] **FOUND-03**: Nurse can escalate a flagged note and the escalation persists to Supabase (survives page refresh)
-- [ ] **FOUND-04**: Nurse can override a flagged note and the override persists to Supabase (survives page refresh)
+- [x] **FOUND-02**: Nurse can approve a flagged note and the approval persists to Supabase (survives page refresh)
+- [x] **FOUND-03**: Nurse can escalate a flagged note and the escalation persists to Supabase (survives page refresh)
+- [x] **FOUND-04**: Nurse can override a flagged note and the override persists to Supabase (survives page refresh)
 - [x] **FOUND-05**: Supply requests are linked to notes via note_id foreign key (not timestamp proximity)
 - [x] **FOUND-06**: Handoff report extras (stable_items, recommended_first_actions) persist to Supabase and display on page reload
 - [x] **FOUND-07**: Supply checklist confirmation state persists to Supabase (survives page refresh)
@@ -42,7 +42,7 @@
 - [ ] **UI-04**: Structured SOAP notes display with clear visual hierarchy (section headers, indentation, temporal context)
 - [ ] **UI-05**: Flag badges use semantic color system consistently (amber=warning, red=critical, green=safe) with sufficient contrast for WCAG AA
 - [ ] **UI-06**: Loading states use skeleton components during AI processing (not just "Processing..." text)
-- [ ] **UI-07**: Error states display actionable feedback when webhook calls fail (not silent failures)
+- [x] **UI-07**: Error states display actionable feedback when webhook calls fail (not silent failures)
 - [x] **UI-08**: Toast notifications for nurse actions (approve, escalate, override) confirming persistence via sonner
 - [ ] **UI-09**: Audit trail / Activity tab uses clean timeline component with nurse avatars and action icons
 - [ ] **UI-10**: Handoff report renders with professional clinical formatting (summary, priority flags with badges, stable items, recommended actions)
@@ -73,14 +73,14 @@
 | REQ-ID | Phase | Status |
 |--------|-------|--------|
 | FOUND-01 | Phase 1 | Complete |
-| FOUND-02 | Phase 1 | Pending |
-| FOUND-03 | Phase 1 | Pending |
-| FOUND-04 | Phase 1 | Pending |
+| FOUND-02 | Phase 1 | Complete |
+| FOUND-03 | Phase 1 | Complete |
+| FOUND-04 | Phase 1 | Complete |
 | FOUND-05 | Phase 1 | Complete |
 | FOUND-06 | Phase 1 | Complete |
 | FOUND-07 | Phase 1 | Complete |
 | FOUND-08 | Phase 1 | Complete |
-| UI-07 | Phase 1 | Pending |
+| UI-07 | Phase 1 | Complete |
 | UI-08 | Phase 1 | Complete |
 | COMP-01 | Phase 2 | Pending |
 | COMP-02 | Phase 2 | Pending |
