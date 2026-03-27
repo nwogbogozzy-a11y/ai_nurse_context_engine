@@ -85,9 +85,9 @@ export default function PatientDetail() {
       setHighlightedNoteId(latestNotes[0].id)
       setTimeout(() => setHighlightedNoteId(null), 2000)
 
-      // Audit: create-note (fire-and-forget)
+      // Audit: create-note
       if (result.note) {
-        insertAuditEntry({
+        await insertAuditEntry({
           patientId,
           nurseName: nurse.name,
           actionType: 'create-note',
@@ -97,6 +97,7 @@ export default function PatientDetail() {
             procedures: result.note.procedures,
           },
         })
+        await fetchData()
       }
     }
   }
@@ -124,29 +125,41 @@ export default function PatientDetail() {
 
       if (!response.ok) throw new Error('Failed to generate handoff report')
 
-      await fetchData()
-      setActiveTab('handoff')
-      toast.success('Handoff report generated')
+      // Safe parse — n8n may return empty body
+      const text = await response.text()
+      if (!text) throw new Error('n8n returned empty response — check workflow Respond to Webhook node')
 
-      // Audit: generate-handoff (fire-and-forget)
+      await fetchData()
+
+      // Verify report was actually created in Supabase
       const { data: latestHandoff } = await supabase
         .from('handoff_reports')
         .select('id')
         .eq('patient_id', patientId)
         .order('generated_at', { ascending: false })
         .limit(1)
-      insertAuditEntry({
+
+      if (!latestHandoff?.[0]) {
+        throw new Error('Handoff report was not saved to database — check n8n workflow')
+      }
+
+      setActiveTab('handoff')
+      toast.success('Handoff report generated', { duration: 4000 })
+
+      // Audit: generate-handoff
+      await insertAuditEntry({
         patientId,
         nurseName: nurse.name,
         actionType: 'generate-handoff',
         metadata: {
-          handoff_report_id: latestHandoff?.[0]?.id,
+          handoff_report_id: latestHandoff[0].id,
           shift: nurse.shift,
         },
       })
+      await fetchData()
     } catch (err) {
       setHandoffError(err instanceof Error ? err.message : 'Failed to generate handoff report. Check that n8n is running.')
-      toast.error('Failed to generate handoff report. Check that n8n is running.', { duration: Infinity })
+      toast.error('Failed to generate handoff report. Check that n8n is running.', { duration: 6000 })
     } finally {
       setGeneratingHandoff(false)
     }
@@ -330,6 +343,7 @@ export default function PatientDetail() {
                       items={supply.items}
                       generatedAt={new Date(supply.generated_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
                       initialConfirmedItems={supply.confirmed_items || {}}
+                      onAuditChange={fetchData}
                     />
                   ))
                 )}

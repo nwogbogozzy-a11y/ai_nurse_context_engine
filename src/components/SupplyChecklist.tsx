@@ -14,9 +14,10 @@ interface SupplyChecklistProps {
   items: SupplyItem[]
   generatedAt: string
   initialConfirmedItems?: Record<number, boolean>
+  onAuditChange?: () => void
 }
 
-export function SupplyChecklist({ supplyRequestId, patientId, procedure, items, generatedAt, initialConfirmedItems }: SupplyChecklistProps) {
+export function SupplyChecklist({ supplyRequestId, patientId, procedure, items, generatedAt, initialConfirmedItems, onAuditChange }: SupplyChecklistProps) {
   const { nurse } = useNurse()
   const [confirmed, setConfirmed] = useState<Record<number, boolean>>(initialConfirmedItems || {})
   const [allReady, setAllReady] = useState(false)
@@ -57,8 +58,8 @@ export function SupplyChecklist({ supplyRequestId, patientId, procedure, items, 
       setAllReady(false)
       toast.error('Failed to save confirmation')
     } else {
-      toast.success('All supplies marked ready')
-      insertAuditEntry({
+      toast.success('All supplies marked ready', { duration: 4000 })
+      await insertAuditEntry({
         patientId,
         nurseName: nurse.name,
         actionType: 'confirm-supply',
@@ -67,6 +68,7 @@ export function SupplyChecklist({ supplyRequestId, patientId, procedure, items, 
           items_confirmed: items.length,
         },
       })
+      onAuditChange?.()
     }
   }
 

@@ -75,7 +75,13 @@ export function DictationInput({ patientId, patientName, onResult }: DictationIn
 
       if (!response.ok) throw new Error(`Webhook returned ${response.status}`)
 
-      const result: WebhookResponse = await response.json()
+      const text = await response.text()
+      let result: WebhookResponse
+      try {
+        result = text ? JSON.parse(text) : {}
+      } catch {
+        throw new Error('Invalid response from n8n webhook — check workflow output')
+      }
       setState('complete')
       setIsDictating(false)
       onResult(result)
@@ -84,7 +90,7 @@ export function DictationInput({ patientId, patientName, onResult }: DictationIn
       setIsDictating(false)
       const message = err instanceof Error ? err.message : 'Failed to process dictation'
       setError(message)
-      toast.error('Failed to process dictation. Check that n8n is running.', { duration: Infinity })
+      toast.error('Failed to process dictation. Check that n8n is running.', { duration: 6000 })
     }
   }
 
