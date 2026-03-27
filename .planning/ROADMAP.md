@@ -46,7 +46,10 @@ Plans:
   2. Patient detail view shows an "Activity" tab with a chronological timeline of all actions taken on that patient — nurse name, action type, and time visible at a glance
   3. A flagged note progresses visibly through three states — flagged, under review, resolved — with the resolving nurse's name and timestamp recorded on the note
   4. Flag badge on a note reflects the current review state (amber for flagged, distinct state for under review, green for resolved); state transitions are visible without page refresh
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 02-01-PLAN.md — Migration, types, audit helper, FlagBadge extension, NurseActionBar state machine
+- [ ] 02-02-PLAN.md — ActivityTimeline component, Activity tab, app-level audit inserts
 **UI hint**: yes
 
 ---
@@ -83,7 +86,7 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Functional Foundation | 1/4 | In Progress|  |
-| 2. Compliance and Audit Trail | 0/? | Not started | - |
+| 1. Functional Foundation | 4/4 | Complete |  |
+| 2. Compliance and Audit Trail | 0/2 | In Progress | - |
 | 3. AI Context Memory | 0/? | Not started | - |
 | 4. Real-Time System and UI Overhaul | 0/? | Not started | - |
