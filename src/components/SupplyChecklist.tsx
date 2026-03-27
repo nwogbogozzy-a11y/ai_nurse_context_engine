@@ -3,17 +3,21 @@
 import { useState } from 'react'
 import { SupplyItem } from '@/lib/types'
 import { supabase } from '@/lib/supabase'
+import { insertAuditEntry } from '@/lib/audit'
+import { useNurse } from '@/contexts/NurseContext'
 import { toast } from 'sonner'
 
 interface SupplyChecklistProps {
   supplyRequestId: string
+  patientId: string
   procedure: string
   items: SupplyItem[]
   generatedAt: string
   initialConfirmedItems?: Record<number, boolean>
 }
 
-export function SupplyChecklist({ supplyRequestId, procedure, items, generatedAt, initialConfirmedItems }: SupplyChecklistProps) {
+export function SupplyChecklist({ supplyRequestId, patientId, procedure, items, generatedAt, initialConfirmedItems }: SupplyChecklistProps) {
+  const { nurse } = useNurse()
   const [confirmed, setConfirmed] = useState<Record<number, boolean>>(initialConfirmedItems || {})
   const [allReady, setAllReady] = useState(false)
 
@@ -54,6 +58,15 @@ export function SupplyChecklist({ supplyRequestId, procedure, items, generatedAt
       toast.error('Failed to save confirmation')
     } else {
       toast.success('All supplies marked ready')
+      insertAuditEntry({
+        patientId,
+        nurseName: nurse.name,
+        actionType: 'confirm-supply',
+        metadata: {
+          supply_request_id: supplyRequestId,
+          items_confirmed: items.length,
+        },
+      })
     }
   }
 

@@ -325,6 +325,7 @@ export default function PatientDetail() {
                     <SupplyChecklist
                       key={supply.id}
                       supplyRequestId={supply.id}
+                      patientId={patientId}
                       procedure={supply.procedure}
                       items={supply.items}
                       generatedAt={new Date(supply.generated_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
