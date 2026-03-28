@@ -50,6 +50,9 @@ export interface SupplyRequest {
   items: SupplyItem[]
   generated_at: string
   confirmed_by: string | null
+  rationale: string | null
+  confirmed_items: Record<string, boolean>
+  note_id: string | null
 }
 
 export interface PriorityFlag {
@@ -65,6 +68,8 @@ export interface HandoffReport {
   flags: PriorityFlag[]
   generated_at: string
   shift_start: string
+  stable_items: string[]
+  recommended_first_actions: string[]
 }
 
 export interface WebhookResponse {
@@ -80,6 +85,7 @@ export interface WebhookResponse {
   }
   supply_list?: {
     procedure: string
+    rationale?: string
     items: SupplyItem[]
   }
   handoff_report?: {
@@ -88,6 +94,15 @@ export interface WebhookResponse {
     stable_items: string[]
     recommended_first_actions: string[]
   }
+}
+
+export interface PatientSummary {
+  id: string
+  patient_id: string
+  summary: string
+  note_count: number
+  generated_at: string
+  created_at: string
 }
 
 export interface AuditLogEntry {
