@@ -90,12 +90,12 @@ export function StructuredNote({ note, noteNumber, procedures, hasSupplyList, on
         </div>
       </div>
 
-      <div className="px-5 py-4 space-y-3">
+      <div className="px-5 py-5 space-y-5">
         {soapSections.map((section) => {
           if (section.nested && !section.content) return null
           return (
             <div key={section.key} className={section.nested ? 'pl-3 border-l-2 border-border' : ''}>
-              <span className={`font-medium uppercase tracking-wide text-secondary ${section.nested ? 'text-[10px]' : 'text-xs'}`}>
+              <span className={`font-semibold uppercase tracking-widest text-secondary ${section.nested ? 'text-xs' : 'text-xs'}`}>
                 {section.label}
               </span>
               <p className="text-sm leading-relaxed text-primary mt-1">
