@@ -39,13 +39,13 @@
 - [ ] **UI-01**: All components upgraded to shadcn/ui with Radix primitives (WCAG 2.1 AA accessible by default)
 - [ ] **UI-02**: Patient dashboard uses card components with clear visual hierarchy (name, ward, status, last note timestamp, flag badges)
 - [ ] **UI-03**: Patient detail view three-panel layout has professional typography, spacing, and visual separation between panels
-- [ ] **UI-04**: Structured SOAP notes display with clear visual hierarchy (section headers, indentation, temporal context)
+- [x] **UI-04**: Structured SOAP notes display with clear visual hierarchy (section headers, indentation, temporal context)
 - [x] **UI-05**: Flag badges use semantic color system consistently (amber=warning, red=critical, green=safe) with sufficient contrast for WCAG AA
 - [ ] **UI-06**: Loading states use skeleton components during AI processing (not just "Processing..." text)
 - [x] **UI-07**: Error states display actionable feedback when webhook calls fail (not silent failures)
 - [x] **UI-08**: Toast notifications for nurse actions (approve, escalate, override) confirming persistence via sonner
 - [x] **UI-09**: Audit trail / Activity tab uses clean timeline component with nurse avatars and action icons
-- [ ] **UI-10**: Handoff report renders with professional clinical formatting (summary, priority flags with badges, stable items, recommended actions)
+- [x] **UI-10**: Handoff report renders with professional clinical formatting (summary, priority flags with badges, stable items, recommended actions)
 
 ---
 
@@ -92,8 +92,8 @@
 | AICTX-02 | Phase 3 | Pending |
 | AICTX-03 | Phase 3 | Complete |
 | AICTX-04 | Phase 3 | Complete |
-| UI-04 | Phase 3 | Pending |
-| UI-10 | Phase 3 | Pending |
+| UI-04 | Phase 3 | Complete |
+| UI-10 | Phase 3 | Complete |
 | RT-01 | Phase 4 | Pending |
 | RT-02 | Phase 4 | Pending |
 | RT-03 | Phase 4 | Pending |
