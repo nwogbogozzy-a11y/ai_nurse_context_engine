@@ -67,7 +67,7 @@ Plans:
 Plans:
 - [x] 03-01-PLAN.md — Migration, types, n8n workflow (prior notes, prompt enrichment, patient summary generation)
 - [x] 03-02-PLAN.md — StructuredNote polish, HandoffReport card layout, SupplyChecklist rationale
-- [ ] 03-03-PLAN.md — PatientContextSummary component, Context tab wiring, supply lookup workflow
+- [x] 03-03-PLAN.md — PatientContextSummary component, Context tab wiring, supply lookup workflow
 **UI hint**: yes
 
 ---

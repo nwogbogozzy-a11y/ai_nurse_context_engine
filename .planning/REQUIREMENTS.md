@@ -23,7 +23,7 @@
 ### AI Context Intelligence
 
 - [x] **AICTX-01**: When structuring a new note, the AI prompt includes a summary of the patient's prior notes (last 5 notes, Assessment + Plan sections) as context
-- [ ] **AICTX-02**: Patient detail view shows a "Patient History" section displaying the AI-aggregated context summary
+- [x] **AICTX-02**: Patient detail view shows a "Patient History" section displaying the AI-aggregated context summary
 - [x] **AICTX-03**: Supply checklist is reframed as "Procedure Prep Recommendations" with rationale attribution ("AI suggested based on [procedure] + [patient context]")
 - [x] **AICTX-04**: Each supply/recommendation item shows confidence context (procedure source, unit type consideration)
 
@@ -89,7 +89,7 @@
 | UI-05 | Phase 2 | Complete |
 | UI-09 | Phase 2 | Complete |
 | AICTX-01 | Phase 3 | Complete |
-| AICTX-02 | Phase 3 | Pending |
+| AICTX-02 | Phase 3 | Complete |
 | AICTX-03 | Phase 3 | Complete |
 | AICTX-04 | Phase 3 | Complete |
 | UI-04 | Phase 3 | Complete |
