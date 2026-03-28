@@ -48,7 +48,7 @@ Plans:
   4. Flag badge on a note reflects the current review state (amber for flagged, distinct state for under review, green for resolved); state transitions are visible without page refresh
 **Plans**: 2 plans
 Plans:
-- [ ] 02-01-PLAN.md — Migration, types, audit helper, FlagBadge extension, NurseActionBar state machine
+- [x] 02-01-PLAN.md — Migration, types, audit helper, FlagBadge extension, NurseActionBar state machine
 - [ ] 02-02-PLAN.md — ActivityTimeline component, Activity tab, app-level audit inserts
 **UI hint**: yes
 
@@ -63,7 +63,11 @@ Plans:
   2. Patient detail left panel displays an AI-generated "Patient Context" summary derived from prior notes — the summary updates when new notes are added
   3. The supply/recommendation panel displays "Procedure Prep Recommendations" with a rationale line per item ("AI suggested based on chest drain + ICU context") rather than an unlabeled checklist
   4. Structured SOAP note output uses clear visual section headers, indentation, and temporal markers; handoff report renders with summary, priority flag badges, stable items, and recommended actions in a professionally formatted layout
-**Plans**: TBD
+**Plans**: 3 plans
+Plans:
+- [ ] 03-01-PLAN.md — Migration, types, n8n workflow (prior notes, prompt enrichment, patient summary generation)
+- [ ] 03-02-PLAN.md — StructuredNote polish, HandoffReport card layout, SupplyChecklist rationale
+- [ ] 03-03-PLAN.md — PatientContextSummary component, Context tab wiring, supply lookup workflow
 **UI hint**: yes
 
 ---
@@ -88,5 +92,5 @@ Plans:
 |-------|----------------|--------|-----------|
 | 1. Functional Foundation | 4/4 | Complete |  |
 | 2. Compliance and Audit Trail | 0/2 | In Progress | - |
-| 3. AI Context Memory | 0/? | Not started | - |
+| 3. AI Context Memory | 0/3 | Not started | - |
 | 4. Real-Time System and UI Overhaul | 0/? | Not started | - |
