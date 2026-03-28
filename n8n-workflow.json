@@ -378,6 +378,74 @@
     },
     {
       "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-api-key",
+              "value": "={{ $env.ANTHROPIC_API_KEY }}"
+            },
+            {
+              "name": "anthropic-version",
+              "value": "2023-06-01"
+            },
+            {
+              "name": "content-type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 512, messages: [{ role: 'user', content: 'You are a clinical summarization assistant. Given a patient\\'s record and their recent notes, produce a concise patient context summary that an incoming nurse could read in 30 seconds.\\n\\nPrioritize: current status, active concerns, treatment trajectory, what needs watching.\\nWrite as if briefing a colleague verbally -- short, prioritized, clinical.\\n\\nPatient record: ' + JSON.stringify($('N3c Parse Prior Notes').item.json.patient_context) + '\\nRecent notes (last 5, A+P only): ' + $('N3c Parse Prior Notes').item.json.prior_notes_context + '\\nLatest note: ' + JSON.stringify($('N5 Parse Claude Response').item.json.structured_note) + '\\n\\nReturn a plain text summary, 3-5 sentences. No JSON wrapping. No headers.' }] }) }}",
+        "options": {}
+      },
+      "id": "n6b-generate-summary",
+      "name": "N6b Generate Patient Summary",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1790, 550]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/patient_summaries",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $env.SUPABASE_ANON_KEY }}"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $env.SUPABASE_ANON_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Prefer",
+              "value": "resolution=merge-duplicates"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ (() => { const summary = $json.content[0].text; const noteCount = ($('N3b Fetch Prior Notes').all() || []).length + 1; return JSON.stringify({ patient_id: $('N2 Parse Input').item.json.patient_id, summary: summary, note_count: noteCount, generated_at: new Date().toISOString() }); })() }}",
+        "options": {}
+      },
+      "id": "n6c-save-summary",
+      "name": "N6c Save Patient Summary",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2010, 550]
+    },
+    {
+      "parameters": {
         "respondWith": "json",
         "responseBody": "={{ (() => { const parsed = $('N5 Parse Claude Response').item.json; const strip = (t) => t.replace(/```json\\n?/g, '').replace(/```\\n?/g, '').trim(); const result = { success: true, note: { structured_note: parsed.structured_note, flagged: parsed.flagged, flag_reason: parsed.flag_reason, procedures: parsed.procedures, patient_id: parsed.patient_id, nurse_name: parsed.nurse_name, shift: parsed.shift } }; try { if (parsed.input_type === 'handoff') { result.handoff_report = JSON.parse(strip($('N8b Claude Handoff Report').item.json.content[0].text)); } } catch(e) {} try { if (parsed.procedures && parsed.procedures.length > 0) { const supplyData = JSON.parse(strip($('N8a Claude Supply List').item.json.content[0].text)); result.supply_list = { procedure: supplyData.procedure, rationale: supplyData.rationale || null, items: supplyData.items }; } } catch(e) {} return JSON.stringify(result); })() }}",
         "options": {
@@ -485,6 +553,22 @@
         [
           {
             "node": "N7 Router",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "N6b Generate Patient Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "N6b Generate Patient Summary": {
+      "main": [
+        [
+          {
+            "node": "N6c Save Patient Summary",
             "type": "main",
             "index": 0
           }
