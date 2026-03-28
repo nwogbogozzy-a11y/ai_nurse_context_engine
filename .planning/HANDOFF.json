@@ -1,0 +1,37 @@
+{
+  "version": "1.0",
+  "timestamp": "2026-03-28T18:39:34.961Z",
+  "phase": "03",
+  "phase_name": "ai-context-memory",
+  "phase_dir": ".planning/phases/03-ai-context-memory",
+  "plan": 3,
+  "task": 2,
+  "total_tasks": 8,
+  "status": "phase_complete",
+  "completed_tasks": [
+    {"id": "03-01-T1", "name": "Migration + Types", "status": "done", "commit": "2b1a99c"},
+    {"id": "03-01-T2", "name": "N3b/N3c prior notes + prompt enrichment", "status": "done", "commit": "67c9356"},
+    {"id": "03-01-T3", "name": "N6b/N6c patient summary generation", "status": "done", "commit": "656249b"},
+    {"id": "03-02-T1", "name": "StructuredNote SOAP typography polish", "status": "done", "commit": "5acd819"},
+    {"id": "03-02-T2", "name": "HandoffReport dashboard card layout", "status": "done", "commit": "d0be55b"},
+    {"id": "03-02-T3", "name": "SupplyChecklist rename + rationale", "status": "done", "commit": "e8a5201"},
+    {"id": "03-03-T1", "name": "PatientContextSummary + Context tab", "status": "done", "commit": "6fc287e"},
+    {"id": "03-03-T2", "name": "Supply lookup workflow enrichment", "status": "done", "commit": "edd0e0d"}
+  ],
+  "remaining_tasks": [],
+  "blockers": [],
+  "human_actions_pending": [
+    {"action": "Run Supabase migration 004_phase3_context_memory.sql", "context": "Creates patient_summaries table and adds rationale column to supply_requests. Must run before testing.", "blocking": true},
+    {"action": "Import updated n8n workflows", "context": "Both n8n-workflow.json and n8n-workflow-supply-lookup.json have new nodes (N3b, N3c, N6b, N6c, S3b, S3c). Import via n8n UI or API.", "blocking": true},
+    {"action": "Human verification: 4 runtime items", "context": "SOAP note prior context quality, patient summary readability, SOAP visual polish, HandoffReport card layout. See 03-VERIFICATION.md human_verification section.", "blocking": false}
+  ],
+  "decisions": [
+    {"decision": "patient_summaries as separate table with UNIQUE constraint on patient_id", "rationale": "Supports upsert pattern, cleaner than column on patients table", "phase": "03"},
+    {"decision": "Single rationale per supply checklist (not per-item)", "rationale": "D-08 locked decision: keeps table compact, rationale is about the overall recommendation", "phase": "03"},
+    {"decision": "Summary generation synchronous in pipeline (not async)", "rationale": "Demo reliability — async would add complexity with no demo benefit", "phase": "03"},
+    {"decision": "Auto-fixed pre-existing type gaps in types.ts", "rationale": "Phase 1 migration added columns (confirmed_items, note_id, stable_items, recommended_first_actions) without updating TypeScript interfaces", "phase": "03"}
+  ],
+  "uncommitted_files": [],
+  "next_action": "Run migration, import n8n workflows, then test all 3 demo scenarios end-to-end. After human verification, proceed to Phase 4 (Real-Time System and UI Overhaul).",
+  "context_notes": "Phase 3 fully executed and verified (9/9 automated must-haves). Phase marked complete in ROADMAP.md. Next phase is Phase 4 which depends on Phases 1 and 2. Branch is feature/procedure-search. Phase 2 plan 02-02 (ActivityTimeline) is still incomplete — check before starting Phase 4."
+}
