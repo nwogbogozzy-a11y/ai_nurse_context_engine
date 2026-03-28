@@ -5,6 +5,7 @@ status: draft
 shadcn_initialized: false
 preset: none
 created: 2026-03-28
+revised: 2026-03-28
 ---
 
 # Phase 3 — UI Design Contract
@@ -48,13 +49,26 @@ Exceptions: Card internal padding uses 20px (`px-5`) throughout existing compone
 | Role | Size | Weight | Line Height | Usage in Phase 3 |
 |------|------|--------|-------------|-------------------|
 | Body | 14px (`text-sm`) | 400 (regular) | 1.625 (`leading-relaxed`) | SOAP section content, summary paragraphs, list items, rationale text |
-| Label | 10-12px (`text-xs`) | 500 (medium) | 1.5 | SOAP section headers (uppercase + tracking-wide), tab labels, timestamps, metadata |
+| Label | 12px (`text-xs`) | 600 (semibold) | 1.5 | SOAP section headers (uppercase + tracking-wide), SOAP S/O/A/P labels (uppercase + tracking-widest), tab labels, timestamps, metadata, nested sub-section headers (HPI, Comorbidities, Interventions) |
+| Summary | 16px (`text-base`) | 400 (regular) | 1.625 (`leading-relaxed`) | Handoff summary body text (visual prominence per D-14) |
 | Heading | 18px (`text-lg`) | 600 (semibold) | 1.4 | Card titles: "Patient Context", "Supply Prep Recommendations", handoff section card titles |
-| Section Letter | 12px (`text-xs`) | 700 (bold) | 1.5 | SOAP S/O/A/P labels only (D-10 upgrade from weight 500 to 700, add `tracking-widest`) |
+
+**Weight discipline:** Phase 3 uses exactly 2 weights throughout:
+- **400 (regular):** All body text, summary paragraphs, list items, rationale content, metadata values, timestamps
+- **600 (semibold):** All labels, headings, SOAP section letters, nested sub-section headers, tab labels, card titles
+
+SOAP S/O/A/P labels are differentiated from general section labels by `tracking-widest` (vs `tracking-wide`) rather than by weight. This follows the design system authority (`.interface-design/system.md`) which uses size and letter-spacing as the primary differentiators between label roles.
+
+**Size discipline:** Phase 3 uses exactly 4 sizes:
+- **12px** (`text-xs`): Labels, SOAP letters, timestamps, metadata, nested sub-section headers
+- **14px** (`text-sm`): Body text, SOAP content, list items, rationale text
+- **16px** (`text-base`): Handoff summary body (upgraded per D-14 for visual prominence)
+- **18px** (`text-lg`): Card titles and section headings
 
 Phase 3 typography changes (D-10, D-11):
-- SOAP section labels: upgrade from `font-medium` to `font-bold` with `tracking-widest` (was `tracking-wide`)
+- SOAP section labels: `font-semibold uppercase tracking-widest text-secondary` (upgraded tracking from `tracking-wide`)
 - SOAP section vertical spacing: upgrade from `space-y-3` to `space-y-5` (12px to 20px gaps between S/O/A/P blocks)
+- Nested sub-sections (HPI, Comorbidities, Interventions): use `text-xs font-semibold` (promoted from `text-[10px]` to 12px, differentiated from body by size and weight)
 - Timestamp and metadata text: use `text-muted` consistently (already `#94A3B8`) for temporal markers to recede behind clinical content
 - No line separators between SOAP sections -- white space only (Tufte 1+1=3 principle, per D-10)
 
@@ -100,7 +114,7 @@ No new color tokens required for Phase 3. All new UI surfaces use existing token
 |----------|---------------|
 | Container | `bg-surface border border-border rounded-lg` |
 | Header | "Patient Context" at `text-lg font-semibold text-primary` |
-| Subheader | "AI-generated from last {N} notes" at `text-xs text-muted` |
+| Subheader | "AI-generated from last {N} notes" at `text-xs font-semibold text-muted` |
 | Summary body | `text-sm leading-relaxed text-primary` |
 | Updated timestamp | `text-xs text-muted` right-aligned in header bar |
 | Empty state | Shown when no summary exists (see Copywriting Contract) |
@@ -118,7 +132,7 @@ No new color tokens required for Phase 3. All new UI surfaces use existing token
 
 | Property | Specification |
 |----------|---------------|
-| Trigger | Row below table header, above items. Text: "View Rationale" in `text-xs font-medium text-accent` with chevron icon (matches existing "Original Dictation" toggle pattern) |
+| Trigger | Row below table header, above items. Text: "View Rationale" in `text-xs font-semibold text-accent` with chevron icon (matches existing "Original Dictation" toggle pattern) |
 | Expanded content | `p-4 bg-background rounded-lg mt-2 mx-5` |
 | Rationale text | `text-sm leading-relaxed text-secondary italic` |
 | Collapsed default | Rationale hidden. Trigger visible. |
@@ -128,9 +142,9 @@ No new color tokens required for Phase 3. All new UI surfaces use existing token
 #### 3. StructuredNote.tsx (UI-04 polish)
 
 Changes per D-10, D-11:
-- SOAP section labels: `font-bold uppercase tracking-widest text-secondary` (was `font-medium tracking-wide`)
+- SOAP section labels: `font-semibold uppercase tracking-widest text-secondary` (was `font-medium tracking-wide`; weight upgraded from 500 to 600, tracking upgraded from `wide` to `widest`)
 - Section spacing: `space-y-5` on SOAP container (was `space-y-3`)
-- Nested sub-sections (HPI, Comorbidities, Interventions): keep `text-[10px]` size but upgrade to `font-semibold`
+- Nested sub-sections (HPI, Comorbidities, Interventions): use `text-xs font-semibold` (was `text-[10px] font-semibold`; size promoted from 10px to 12px, differentiated from body text by size and weight alone)
 - Timestamp metadata in note header: ensure `text-muted` color for all temporal text
 - No structural layout changes. Left-aligned text, F-pattern optimized (D-11).
 
