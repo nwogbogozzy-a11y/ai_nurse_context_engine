@@ -61,6 +61,43 @@
     },
     {
       "parameters": {
+        "method": "GET",
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/notes?patient_id=eq.{{ $('N2 Parse Input').item.json.patient_id }}&select=structured_note,created_at&order=created_at.desc&limit=5",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $env.SUPABASE_ANON_KEY }}"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $env.SUPABASE_ANON_KEY }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "n3b-fetch-prior-notes",
+      "name": "N3b Fetch Prior Notes",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [800, 480]
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={{ (() => { const notes = $('N3b Fetch Prior Notes').all(); const now = new Date(); let prior_notes_context = 'No prior notes available.'; if (notes && notes.length > 0) { prior_notes_context = 'Prior clinical context (last ' + notes.length + ' notes, most recent first):\\n\\n' + notes.map((n, i) => { let parsed; try { parsed = typeof n.json.structured_note === 'string' ? JSON.parse(n.json.structured_note) : n.json.structured_note; } catch (e) { return '[' + (i + 1) + '] Unable to parse note'; } const created = new Date(n.json.created_at); const hoursAgo = Math.round((now - created) / 3600000); const ageLabel = hoursAgo < 24 ? hoursAgo + ' hours ago' : Math.round(hoursAgo / 24) + ' days ago'; return '[' + (i + 1) + '] ' + ageLabel + ' (' + created.toLocaleTimeString('en-GB', {hour:'2-digit', minute:'2-digit'}) + '):\\n  Assessment: ' + (parsed.assessment || 'N/A') + '\\n  Plan: ' + (parsed.plan || 'N/A'); }).join('\\n\\n'); } const patientData = $('N3 Fetch Patient Context').item.json[0] || $('N3 Fetch Patient Context').item.json; const input = $('N2 Parse Input').item.json; return JSON.stringify({ patient_id: input.patient_id, raw_input: input.raw_input, nurse_name: input.nurse_name, shift: input.shift, input_type: input.input_type, patient_context: patientData, prior_notes_context: prior_notes_context }); })() }}",
+        "options": {}
+      },
+      "id": "n3c-parse-prior-notes",
+      "name": "N3c Parse Prior Notes",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [910, 480]
+    },
+    {
+      "parameters": {
         "method": "POST",
         "url": "https://api.anthropic.com/v1/messages",
         "sendHeaders": true,
@@ -82,26 +119,26 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 1024, messages: [{ role: 'user', content: 'You are a clinical documentation assistant helping nurses create accurate, structured patient notes.\\n\\nGiven a nurse\\'s raw dictation and the patient\\'s current context, produce:\\n1. A structured clinical note in SOAP format (Subjective, Objective, Assessment, Plan)\\n2. A flagged field (true/false) — flag if any value is outside expected range or requires urgent human review\\n3. A flag_reason (string) — plain English explanation of why this was flagged, if applicable\\n4. A procedures array — list any clinical procedures mentioned that would require supplies\\n\\nPatient context: ' + JSON.stringify($('N3 Fetch Patient Context').item.json[0] || $('N3 Fetch Patient Context').item.json) + '\\nRaw dictation: ' + $('N2 Parse Input').item.json.raw_input + '\\nShift: ' + $('N2 Parse Input').item.json.shift + '\\n\\nReturn valid JSON only. No preamble. No explanation outside the JSON.\\n\\n{\\n  \"structured_note\": { \"subjective\": \"\", \"objective\": \"\", \"assessment\": \"\", \"plan\": \"\" },\\n  \"flagged\": false,\\n  \"flag_reason\": \"\",\\n  \"procedures\": []\\n}' }] }) }}",
+        "jsonBody": "={{ JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 1024, messages: [{ role: 'user', content: 'You are a clinical documentation assistant helping nurses create accurate, structured patient notes.\\n\\nGiven a nurse\\'s raw dictation and the patient\\'s current context, produce:\\n1. A structured clinical note in SOAP format (Subjective, Objective, Assessment, Plan)\\n2. A flagged field (true/false) — flag if any value is outside expected range or requires urgent human review\\n3. A flag_reason (string) — plain English explanation of why this was flagged, if applicable\\n4. A procedures array — list any clinical procedures mentioned that would require supplies\\n\\nPatient context: ' + JSON.stringify($('N3c Parse Prior Notes').item.json.patient_context) + '\\nRaw dictation: ' + $('N3c Parse Prior Notes').item.json.raw_input + '\\nShift: ' + $('N3c Parse Prior Notes').item.json.shift + '\\n\\nPrior clinical context (last 5 notes, most recent first):\\n' + $('N3c Parse Prior Notes').item.json.prior_notes_context + '\\n\\nUse the prior clinical context to inform your assessment and plan. Reference relevant history where it affects the current note (e.g., \"consistent with prior assessments\" or \"new finding compared to previous check\"). Do not repeat prior notes verbatim.\\n\\nReturn valid JSON only. No preamble. No explanation outside the JSON.\\n\\n{\\n  \"structured_note\": { \"subjective\": \"\", \"objective\": \"\", \"assessment\": \"\", \"plan\": \"\" },\\n  \"flagged\": false,\\n  \"flag_reason\": \"\",\\n  \"procedures\": []\\n}' }] }) }}",
         "options": {}
       },
       "id": "n4-claude-note",
       "name": "N4 Claude Structure Note",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [910, 300]
+      "position": [1130, 300]
     },
     {
       "parameters": {
         "mode": "raw",
-        "jsonOutput": "={{ (() => { const text = $json.content[0].text; const parsed = JSON.parse(text); const input = $('N2 Parse Input').item.json; return JSON.stringify({ patient_id: input.patient_id, raw_input: input.raw_input, nurse_name: input.nurse_name, shift: input.shift, input_type: input.input_type, structured_note: parsed.structured_note, flagged: parsed.flagged, flag_reason: parsed.flag_reason || '', procedures: parsed.procedures || [], patient_context: $('N3 Fetch Patient Context').item.json[0] || $('N3 Fetch Patient Context').item.json }); })() }}",
+        "jsonOutput": "={{ (() => { const text = $json.content[0].text; const parsed = JSON.parse(text); const input = $('N3c Parse Prior Notes').item.json; return JSON.stringify({ patient_id: input.patient_id, raw_input: input.raw_input, nurse_name: input.nurse_name, shift: input.shift, input_type: input.input_type, structured_note: parsed.structured_note, flagged: parsed.flagged, flag_reason: parsed.flag_reason || '', procedures: parsed.procedures || [], patient_context: input.patient_context }); })() }}",
         "options": {}
       },
       "id": "n5-parse-response",
       "name": "N5 Parse Claude Response",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
-      "position": [1130, 300]
+      "position": [1350, 300]
     },
     {
       "parameters": {
@@ -137,7 +174,7 @@
       "name": "N6 Save Note to Supabase",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1350, 300]
+      "position": [1570, 300]
     },
     {
       "parameters": {
@@ -201,7 +238,7 @@
       "name": "N7 Router",
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.2,
-      "position": [1570, 300]
+      "position": [1790, 300]
     },
     {
       "parameters": {
@@ -226,14 +263,14 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 1024, messages: [{ role: 'user', content: 'You are a clinical supply coordinator helping nurses prepare for procedures efficiently.\\n\\nGiven the procedure(s) about to be performed and the patient\\'s current context, generate a precise supply checklist. Include only what is needed — do not pad the list. Return valid JSON only. No markdown code fences. No preamble.\\n\\nPatient context: ' + JSON.stringify($('N5 Parse Claude Response').item.json.patient_context) + '\\nProcedures: ' + JSON.stringify($('N5 Parse Claude Response').item.json.procedures) + '\\nUnit type: ' + ($('N5 Parse Claude Response').item.json.patient_context.unit_type || 'general') + '\\n\\nReturn valid JSON only.\\n\\n{\\n  \"procedure\": \"\",\\n  \"items\": [\\n    { \"item\": \"\", \"quantity\": 0, \"unit\": \"\", \"notes\": \"\" }\\n  ]\\n}' }] }) }}",
+        "jsonBody": "={{ JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 1024, messages: [{ role: 'user', content: 'You are a clinical supply coordinator helping nurses prepare for procedures efficiently.\\n\\nGiven the procedure(s) about to be performed and the patient\\'s current context, generate a precise supply checklist. Include only what is needed — do not pad the list. Return valid JSON only. No markdown code fences. No preamble.\\n\\nPatient context: ' + JSON.stringify($('N5 Parse Claude Response').item.json.patient_context) + '\\nProcedures: ' + JSON.stringify($('N5 Parse Claude Response').item.json.procedures) + '\\nUnit type: ' + ($('N5 Parse Claude Response').item.json.patient_context.unit_type || 'general') + '\\n\\nPrior clinical context:\\n' + $('N3c Parse Prior Notes').item.json.prior_notes_context + '\\n\\nInclude a rationale explaining why these specific supplies are recommended given the procedure and patient context.\\n\\nReturn valid JSON only.\\n\\n{\\n  \"procedure\": \"\",\\n  \"rationale\": \"\",\\n  \"items\": [\\n    { \"item\": \"\", \"quantity\": 0, \"unit\": \"\", \"notes\": \"\" }\\n  ]\\n}' }] }) }}",
         "options": {}
       },
       "id": "n8a-claude-supply",
       "name": "N8a Claude Supply List",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1790, 200]
+      "position": [2010, 200]
     },
     {
       "parameters": {
@@ -258,14 +295,14 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ (() => { const patientId = $('N2 Parse Input').item.json.patient_id; return JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 2048, messages: [{ role: 'user', content: 'You are a clinical handoff assistant helping incoming nurses start their shift with full situational awareness.\\n\\nGiven the patient record and recent notes, produce a structured handoff briefing. Prioritize: what changed, what needs watching, what is stable. Cut anything that does not help the incoming nurse in the first 30 minutes.\\n\\nPatient record: ' + JSON.stringify($('N5 Parse Claude Response').item.json.patient_context) + '\\nRecent notes: ' + JSON.stringify($('N5 Parse Claude Response').item.json.structured_note) + '\\nRaw input: ' + $('N5 Parse Claude Response').item.json.raw_input + '\\nIncoming shift: ' + ($('N2 Parse Input').item.json.shift === 'day' ? 'night' : 'day') + '\\n\\nReturn valid JSON only.\\n\\n{\\n  \"summary\": \"\",\\n  \"priority_flags\": [\\n    { \"type\": \"warning|critical\", \"detail\": \"\" }\\n  ],\\n  \"stable_items\": [],\\n  \"recommended_first_actions\": []\\n}' }] }); })() }}",
+        "jsonBody": "={{ (() => { const patientId = $('N2 Parse Input').item.json.patient_id; return JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 2048, messages: [{ role: 'user', content: 'You are a clinical handoff assistant helping incoming nurses start their shift with full situational awareness.\\n\\nGiven the patient record and recent notes, produce a structured handoff briefing. Prioritize: what changed, what needs watching, what is stable. Cut anything that does not help the incoming nurse in the first 30 minutes.\\n\\nPatient record: ' + JSON.stringify($('N5 Parse Claude Response').item.json.patient_context) + '\\nRecent notes: ' + JSON.stringify($('N5 Parse Claude Response').item.json.structured_note) + '\\nRaw input: ' + $('N5 Parse Claude Response').item.json.raw_input + '\\nIncoming shift: ' + ($('N2 Parse Input').item.json.shift === 'day' ? 'night' : 'day') + '\\n\\nPrior clinical context (last 5 notes):\\n' + $('N3c Parse Prior Notes').item.json.prior_notes_context + '\\n\\nReturn valid JSON only.\\n\\n{\\n  \"summary\": \"\",\\n  \"priority_flags\": [\\n    { \"type\": \"warning|critical\", \"detail\": \"\" }\\n  ],\\n  \"stable_items\": [],\\n  \"recommended_first_actions\": []\\n}' }] }); })() }}",
         "options": {}
       },
       "id": "n8b-claude-handoff",
       "name": "N8b Claude Handoff Report",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1790, 450]
+      "position": [2010, 450]
     },
     {
       "parameters": {
@@ -294,14 +331,14 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ (() => { let text = $json.content[0].text.replace(/```json\\n?/g, '').replace(/```\\n?/g, '').trim(); const supply = JSON.parse(text); return JSON.stringify({ patient_id: $('N5 Parse Claude Response').item.json.patient_id, procedure: supply.procedure, items: supply.items }); })() }}",
+        "jsonBody": "={{ (() => { let text = $json.content[0].text.replace(/```json\\n?/g, '').replace(/```\\n?/g, '').trim(); const supply = JSON.parse(text); return JSON.stringify({ patient_id: $('N5 Parse Claude Response').item.json.patient_id, procedure: supply.procedure, items: supply.items, rationale: supply.rationale || null }); })() }}",
         "options": {}
       },
       "id": "n9a-save-supply",
       "name": "N9a Save Supply Request",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [2010, 200]
+      "position": [2230, 200]
     },
     {
       "parameters": {
@@ -337,12 +374,12 @@
       "name": "N9b Save Handoff Report",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [2010, 450]
+      "position": [2230, 450]
     },
     {
       "parameters": {
         "respondWith": "json",
-        "responseBody": "={{ (() => { const parsed = $('N5 Parse Claude Response').item.json; const strip = (t) => t.replace(/```json\\n?/g, '').replace(/```\\n?/g, '').trim(); const result = { success: true, note: { structured_note: parsed.structured_note, flagged: parsed.flagged, flag_reason: parsed.flag_reason, procedures: parsed.procedures, patient_id: parsed.patient_id, nurse_name: parsed.nurse_name, shift: parsed.shift } }; try { if (parsed.input_type === 'handoff') { result.handoff_report = JSON.parse(strip($('N8b Claude Handoff Report').item.json.content[0].text)); } } catch(e) {} try { if (parsed.procedures && parsed.procedures.length > 0) { result.supply_list = JSON.parse(strip($('N8a Claude Supply List').item.json.content[0].text)); } } catch(e) {} return JSON.stringify(result); })() }}",
+        "responseBody": "={{ (() => { const parsed = $('N5 Parse Claude Response').item.json; const strip = (t) => t.replace(/```json\\n?/g, '').replace(/```\\n?/g, '').trim(); const result = { success: true, note: { structured_note: parsed.structured_note, flagged: parsed.flagged, flag_reason: parsed.flag_reason, procedures: parsed.procedures, patient_id: parsed.patient_id, nurse_name: parsed.nurse_name, shift: parsed.shift } }; try { if (parsed.input_type === 'handoff') { result.handoff_report = JSON.parse(strip($('N8b Claude Handoff Report').item.json.content[0].text)); } } catch(e) {} try { if (parsed.procedures && parsed.procedures.length > 0) { const supplyData = JSON.parse(strip($('N8a Claude Supply List').item.json.content[0].text)); result.supply_list = { procedure: supplyData.procedure, rationale: supplyData.rationale || null, items: supplyData.items }; } } catch(e) {} return JSON.stringify(result); })() }}",
         "options": {
           "responseHeaders": {
             "entries": [
@@ -362,7 +399,7 @@
       "name": "N10 Webhook Response",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
-      "position": [2230, 300]
+      "position": [2450, 300]
     }
   ],
   "connections": {
@@ -389,6 +426,28 @@
       ]
     },
     "N3 Fetch Patient Context": {
+      "main": [
+        [
+          {
+            "node": "N3b Fetch Prior Notes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "N3b Fetch Prior Notes": {
+      "main": [
+        [
+          {
+            "node": "N3c Parse Prior Notes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "N3c Parse Prior Notes": {
       "main": [
         [
           {
