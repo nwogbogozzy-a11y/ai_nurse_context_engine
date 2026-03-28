@@ -15,17 +15,17 @@
 
 ### Compliance & Accountability
 
-- [ ] **COMP-01**: Every nurse action (approve, escalate, override, generate handoff, confirm supply) writes an audit event to an audit_log table with nurse_name, action_type, patient_id, timestamp, and metadata
-- [ ] **COMP-02**: Patient detail view includes an "Activity" tab showing chronological audit trail for that patient
-- [ ] **COMP-03**: Flagged notes support a review status state machine (flagged -> under_review -> resolved) with resolving nurse attribution and timestamp
-- [ ] **COMP-04**: Flag escalation state transitions are visible as badge progression on the note display
+- [x] **COMP-01**: Every nurse action (approve, escalate, override, generate handoff, confirm supply) writes an audit event to an audit_log table with nurse_name, action_type, patient_id, timestamp, and metadata
+- [x] **COMP-02**: Patient detail view includes an "Activity" tab showing chronological audit trail for that patient
+- [x] **COMP-03**: Flagged notes support a review status state machine (flagged -> under_review -> resolved) with resolving nurse attribution and timestamp
+- [x] **COMP-04**: Flag escalation state transitions are visible as badge progression on the note display
 
 ### AI Context Intelligence
 
-- [ ] **AICTX-01**: When structuring a new note, the AI prompt includes a summary of the patient's prior notes (last 5 notes, Assessment + Plan sections) as context
+- [x] **AICTX-01**: When structuring a new note, the AI prompt includes a summary of the patient's prior notes (last 5 notes, Assessment + Plan sections) as context
 - [ ] **AICTX-02**: Patient detail view shows a "Patient History" section displaying the AI-aggregated context summary
-- [ ] **AICTX-03**: Supply checklist is reframed as "Procedure Prep Recommendations" with rationale attribution ("AI suggested based on [procedure] + [patient context]")
-- [ ] **AICTX-04**: Each supply/recommendation item shows confidence context (procedure source, unit type consideration)
+- [x] **AICTX-03**: Supply checklist is reframed as "Procedure Prep Recommendations" with rationale attribution ("AI suggested based on [procedure] + [patient context]")
+- [x] **AICTX-04**: Each supply/recommendation item shows confidence context (procedure source, unit type consideration)
 
 ### Real-Time System
 
@@ -40,11 +40,11 @@
 - [ ] **UI-02**: Patient dashboard uses card components with clear visual hierarchy (name, ward, status, last note timestamp, flag badges)
 - [ ] **UI-03**: Patient detail view three-panel layout has professional typography, spacing, and visual separation between panels
 - [ ] **UI-04**: Structured SOAP notes display with clear visual hierarchy (section headers, indentation, temporal context)
-- [ ] **UI-05**: Flag badges use semantic color system consistently (amber=warning, red=critical, green=safe) with sufficient contrast for WCAG AA
+- [x] **UI-05**: Flag badges use semantic color system consistently (amber=warning, red=critical, green=safe) with sufficient contrast for WCAG AA
 - [ ] **UI-06**: Loading states use skeleton components during AI processing (not just "Processing..." text)
 - [x] **UI-07**: Error states display actionable feedback when webhook calls fail (not silent failures)
 - [x] **UI-08**: Toast notifications for nurse actions (approve, escalate, override) confirming persistence via sonner
-- [ ] **UI-09**: Audit trail / Activity tab uses clean timeline component with nurse avatars and action icons
+- [x] **UI-09**: Audit trail / Activity tab uses clean timeline component with nurse avatars and action icons
 - [ ] **UI-10**: Handoff report renders with professional clinical formatting (summary, priority flags with badges, stable items, recommended actions)
 
 ---
@@ -82,16 +82,16 @@
 | FOUND-08 | Phase 1 | Complete |
 | UI-07 | Phase 1 | Complete |
 | UI-08 | Phase 1 | Complete |
-| COMP-01 | Phase 2 | Pending |
-| COMP-02 | Phase 2 | Pending |
-| COMP-03 | Phase 2 | Pending |
-| COMP-04 | Phase 2 | Pending |
-| UI-05 | Phase 2 | Pending |
-| UI-09 | Phase 2 | Pending |
-| AICTX-01 | Phase 3 | Pending |
+| COMP-01 | Phase 2 | Complete |
+| COMP-02 | Phase 2 | Complete |
+| COMP-03 | Phase 2 | Complete |
+| COMP-04 | Phase 2 | Complete |
+| UI-05 | Phase 2 | Complete |
+| UI-09 | Phase 2 | Complete |
+| AICTX-01 | Phase 3 | Complete |
 | AICTX-02 | Phase 3 | Pending |
-| AICTX-03 | Phase 3 | Pending |
-| AICTX-04 | Phase 3 | Pending |
+| AICTX-03 | Phase 3 | Complete |
+| AICTX-04 | Phase 3 | Complete |
 | UI-04 | Phase 3 | Pending |
 | UI-10 | Phase 3 | Pending |
 | RT-01 | Phase 4 | Pending |
