@@ -160,7 +160,7 @@ export function StructuredNote({ note, noteNumber, procedures, hasSupplyList, on
         </div>
       )}
 
-      {(note.flagged || note.review_status === 'under_review' || note.review_status === 'escalated') && (
+      {note.review_status !== 'approved' && note.review_status !== 'overridden' && note.review_status !== 'resolved' && (
         <div className="px-5 py-3 border-t border-border bg-background">
           <NurseActionBar
             noteId={note.id}
