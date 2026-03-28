@@ -118,7 +118,7 @@ export default function PatientDetail() {
           patient_id: patientId,
           raw_input: lastNote?.raw_input || patient.current_status,
           nurse_name: nurse.name,
-          shift: nurse.shift,
+          shift: nurse.shift.toLowerCase(),
           input_type: 'handoff',
         }),
       })

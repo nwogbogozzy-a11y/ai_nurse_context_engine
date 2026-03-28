@@ -68,7 +68,7 @@ export function DictationInput({ patientId, patientName, onResult }: DictationIn
           patient_id: patientId,
           raw_input: rawInput,
           nurse_name: nurse.name,
-          shift: nurse.shift,
+          shift: nurse.shift.toLowerCase(),
           input_type: 'note',
         }),
       })
