@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback, useMemo } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
-import { Patient, Note, SupplyRequest, HandoffReport as HandoffReportType, WebhookResponse, AuditLogEntry } from '@/lib/types'
+import { Patient, Note, SupplyRequest, HandoffReport as HandoffReportType, WebhookResponse, AuditLogEntry, PatientSummary } from '@/lib/types'
 import { FlagBadge } from '@/components/FlagBadge'
 import { DictationInput } from '@/components/DictationInput'
 import { StructuredNote } from '@/components/StructuredNote'
@@ -12,11 +12,12 @@ import { SupplyChecklist } from '@/components/SupplyChecklist'
 import { ProcedureSearch } from '@/components/ProcedureSearch'
 import { HandoffReport } from '@/components/HandoffReport'
 import { ActivityTimeline } from '@/components/ActivityTimeline'
+import { PatientContextSummary } from '@/components/PatientContextSummary'
 import { useNurse } from '@/contexts/NurseContext'
 import { insertAuditEntry } from '@/lib/audit'
 import { toast } from 'sonner'
 
-type Tab = 'notes' | 'supplies' | 'handoff' | 'activity'
+type Tab = 'notes' | 'supplies' | 'handoff' | 'activity' | 'context'
 
 export default function PatientDetail() {
   const params = useParams()
@@ -33,6 +34,7 @@ export default function PatientDetail() {
   const [handoffError, setHandoffError] = useState<string | null>(null)
   const [highlightedNoteId, setHighlightedNoteId] = useState<string | null>(null)
   const [auditEntries, setAuditEntries] = useState<AuditLogEntry[]>([])
+  const [patientSummary, setPatientSummary] = useState<PatientSummary | null>(null)
 
   // Correlate notes to supply_requests by timestamp proximity (within 120s)
   const noteProcedures = useMemo(() => {
@@ -53,12 +55,13 @@ export default function PatientDetail() {
   }, [notes, supplies])
 
   const fetchData = useCallback(async () => {
-    const [patientRes, notesRes, suppliesRes, handoffsRes, auditRes] = await Promise.all([
+    const [patientRes, notesRes, suppliesRes, handoffsRes, auditRes, summaryRes] = await Promise.all([
       supabase.from('patients').select('*').eq('id', patientId).single(),
       supabase.from('notes').select('*').eq('patient_id', patientId).order('created_at', { ascending: false }),
       supabase.from('supply_requests').select('*').eq('patient_id', patientId).order('generated_at', { ascending: false }),
       supabase.from('handoff_reports').select('*').eq('patient_id', patientId).order('generated_at', { ascending: false }),
       supabase.from('audit_log').select('*').eq('patient_id', patientId).order('created_at', { ascending: false }),
+      supabase.from('patient_summaries').select('*').eq('patient_id', patientId).order('generated_at', { ascending: false }).limit(1).single(),
     ])
 
     if (patientRes.data) setPatient(patientRes.data)
@@ -66,6 +69,7 @@ export default function PatientDetail() {
     if (suppliesRes.data) setSupplies(suppliesRes.data)
     if (handoffsRes.data) setHandoffs(handoffsRes.data)
     if (auditRes.data) setAuditEntries(auditRes.data)
+    if (summaryRes.data) setPatientSummary(summaryRes.data)
     setLoading(false)
   }, [patientId])
 
@@ -196,6 +200,7 @@ export default function PatientDetail() {
     { key: 'supplies', label: 'Supply Requests', count: supplies.length },
     { key: 'handoff', label: 'Handoff Report', count: handoffs.length },
     { key: 'activity' as Tab, label: 'Activity', count: auditEntries.length },
+    { key: 'context' as Tab, label: 'Context', count: patientSummary ? 1 : 0 },
   ]
 
   return (
@@ -344,6 +349,7 @@ export default function PatientDetail() {
                       generatedAt={new Date(supply.generated_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
                       initialConfirmedItems={supply.confirmed_items || {}}
                       onAuditChange={fetchData}
+                      rationale={supply.rationale}
                     />
                   ))
                 )}
@@ -373,6 +379,10 @@ export default function PatientDetail() {
 
             {activeTab === 'activity' && (
               <ActivityTimeline entries={auditEntries} />
+            )}
+
+            {activeTab === 'context' && (
+              <PatientContextSummary summary={patientSummary} loading={loading} />
             )}
           </div>
         </div>
