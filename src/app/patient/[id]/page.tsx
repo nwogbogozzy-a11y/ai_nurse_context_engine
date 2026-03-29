@@ -21,6 +21,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
+import { HandoffSkeleton } from '@/components/skeletons/HandoffSkeleton'
 import { cn } from '@/lib/utils'
 
 type Tab = 'notes' | 'supplies' | 'handoff' | 'activity' | 'context'
@@ -428,7 +429,8 @@ export default function PatientDetail() {
             </TabsContent>
 
             <TabsContent value="handoff" className={cn('mt-4 space-y-4')}>
-              {handoffs.length === 0 ? (
+              {generatingHandoff && <HandoffSkeleton />}
+              {!generatingHandoff && handoffs.length === 0 ? (
                 <Card className={cn('text-center py-12')}>
                   <p className={cn('text-sm font-medium text-primary mb-1')}>No handoff report</p>
                   <p className={cn('text-sm text-secondary')}>Generate a handoff report to brief the incoming nurse on this patient&apos;s current state.</p>
