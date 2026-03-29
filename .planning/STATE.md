@@ -87,8 +87,8 @@ None at start of planning.
 
 ## Session Continuity
 
-**What was just done:** Completed 03-03-PLAN.md -- Context integration wiring. PatientContextSummary component created with loading/empty/populated states. Context tab wired in patient detail page with patient_summaries fetch. Supply rationale passed through to SupplyChecklist. Standalone supply lookup workflow enriched with prior notes (S3b/S3c) and rationale. Phase 03 complete.
+**What was just done:** Phase 3 blocking items resolved. Supabase migration 004 applied (user). Both n8n workflows imported with Phase 3 nodes (prior notes enrichment, patient summary generation, supply rationale). Switch node replaced with two If nodes (N7a/N7b) to match n8n import format. Local workflow JSONs updated to use $vars. consistently.
 
-**What comes next:** Phase 04 -- UI migration (shadcn/ui). Verification of Phase 03 may run first.
+**What comes next:** Phase 04 -- Real-Time System and UI Overhaul. Human verification of Phase 3 runtime items still pending (non-blocking).
 
-**Context to carry:** Phase 03 fully complete (3/3 plans). All AI context memory features wired end-to-end: prior notes enrichment in both n8n workflows, patient summaries generated and displayed, supply rationale flowing from Claude through Supabase to UI. Both workflows use consistent prior notes pattern (N3b/N3c in main, S3b/S3c in supply lookup). Pre-existing lint issues in NurseContext.tsx, DictationInput.tsx, layout.tsx are unrelated. Build passes clean.
+**Context to carry:** All 4 phases planned, Phases 1-3 complete (9/9 plans executed). n8n workflows now use If nodes (N7a Is Handoff, N7b Has Procedures) instead of Switch node -- local JSON matches live. Supply lookup workflow uses $vars. for env references. Phase 3 human verification items (SOAP quality, patient summary readability, visual polish) are non-blocking and can be checked during Phase 4 work.
