@@ -81,7 +81,14 @@ Plans:
   2. Patient dashboard flag badges update live — flagging a note from the patient detail view causes the badge on the dashboard card to appear without navigating away and back
   3. All interactive components (buttons, dropdowns, dialogs, tabs) pass WCAG 2.1 AA contrast and keyboard navigation requirements; no custom CSS overrides semantic Radix behavior
   4. Patient dashboard card grid and patient detail three-panel layout use shadcn/ui components with consistent spacing, typography, and visual hierarchy; AI processing states show skeleton loaders rather than static "Processing..." text
-**Plans**: TBD
+**Plans**: 6 plans
+Plans:
+- [ ] 04-01-PLAN.md — shadcn/ui init, CSS variable remapping, skeleton loaders, TimeoutRetry
+- [ ] 04-02-PLAN.md — Supabase Realtime migration + subscription hooks
+- [ ] 04-03-PLAN.md — Layout header, NurseSwitcher, FlagBadge, NurseActionBar, PatientCard migration
+- [ ] 04-04-PLAN.md — StructuredNote, DictationInput, SupplyChecklist, HandoffReport migration
+- [ ] 04-05-PLAN.md — ActivityTimeline, PatientContextSummary, ProcedureSearch migration
+- [ ] 04-06-PLAN.md — Page-level wiring: realtime subscriptions, shadcn Tabs, visual polish
 **UI hint**: yes
 
 ---
@@ -93,4 +100,4 @@ Plans:
 | 1. Functional Foundation | 4/4 | Complete |  |
 | 2. Compliance and Audit Trail | 0/2 | In Progress | - |
 | 3. AI Context Memory | 0/3 | Not started | - |
-| 4. Real-Time System and UI Overhaul | 0/? | Not started | - |
+| 4. Real-Time System and UI Overhaul | 0/6 | Not started | - |
