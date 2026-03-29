@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback, useMemo } from 'react'
+import { useEffect, useState, useCallback, useMemo, useRef } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
@@ -16,6 +16,12 @@ import { PatientContextSummary } from '@/components/PatientContextSummary'
 import { useNurse } from '@/contexts/NurseContext'
 import { insertAuditEntry } from '@/lib/audit'
 import { toast } from 'sonner'
+import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Card } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Skeleton } from '@/components/ui/skeleton'
+import { cn } from '@/lib/utils'
 
 type Tab = 'notes' | 'supplies' | 'handoff' | 'activity' | 'context'
 
@@ -35,6 +41,9 @@ export default function PatientDetail() {
   const [highlightedNoteId, setHighlightedNoteId] = useState<string | null>(null)
   const [auditEntries, setAuditEntries] = useState<AuditLogEntry[]>([])
   const [patientSummary, setPatientSummary] = useState<PatientSummary | null>(null)
+
+  // Ref for pending highlight from dictation submission
+  const pendingHighlightRef = useRef(false)
 
   // Correlate notes to supply_requests by timestamp proximity (within 120s)
   const noteProcedures = useMemo(() => {
@@ -75,22 +84,60 @@ export default function PatientDetail() {
 
   useEffect(() => { fetchData() }, [fetchData])
 
-  const handleDictationResult = async (result: WebhookResponse) => {
-    await fetchData()
-    setActiveTab('notes')
-    // Highlight the newest note (first in the list after fetch)
-    const { data: latestNotes } = await supabase
-      .from('notes')
-      .select('id')
-      .eq('patient_id', patientId)
-      .order('created_at', { ascending: false })
-      .limit(1)
-    if (latestNotes?.[0]) {
-      setHighlightedNoteId(latestNotes[0].id)
+  // D-03/D-04/D-05: Per-patient realtime subscriptions
+  const handleNoteInsert = useCallback((note: Note) => {
+    // D-05: prepend to top of list, no full refetch
+    setNotes((prev) => [note, ...prev])
+    // If a dictation was just submitted, highlight this new note
+    if (pendingHighlightRef.current) {
+      pendingHighlightRef.current = false
+      setHighlightedNoteId(note.id)
       setTimeout(() => setHighlightedNoteId(null), 2000)
+    }
+  }, [])
 
-      // Audit: create-note
-      if (result.note) {
+  const handleNoteUpdate = useCallback((note: Note) => {
+    // Replace updated note in list (review_status changes)
+    setNotes((prev) => prev.map((n) => n.id === note.id ? note : n))
+  }, [])
+
+  const handleSupplyInsert = useCallback((supply: SupplyRequest) => {
+    setSupplies((prev) => [supply, ...prev])
+  }, [])
+
+  const handleHandoffInsert = useCallback((handoff: HandoffReportType) => {
+    setHandoffs((prev) => [handoff, ...prev])
+  }, [])
+
+  const handleAuditInsert = useCallback((entry: AuditLogEntry) => {
+    setAuditEntries((prev) => [entry, ...prev])
+  }, [])
+
+  useRealtimeSubscription({
+    patientId,
+    onNoteInsert: handleNoteInsert,
+    onNoteUpdate: handleNoteUpdate,
+    onSupplyInsert: handleSupplyInsert,
+    onHandoffInsert: handleHandoffInsert,
+    onAuditInsert: handleAuditInsert,
+  })
+
+  const handleDictationResult = async (result: WebhookResponse) => {
+    // Set pending highlight so the realtime insert callback highlights the note
+    pendingHighlightRef.current = true
+    setActiveTab('notes')
+
+    // Audit: create-note
+    if (result.note) {
+      // Fetch latest note ID for audit metadata
+      const { data: latestNotes } = await supabase
+        .from('notes')
+        .select('id')
+        .eq('patient_id', patientId)
+        .order('created_at', { ascending: false })
+        .limit(1)
+
+      if (latestNotes?.[0]) {
         await insertAuditEntry({
           patientId,
           nurseName: nurse.name,
@@ -101,9 +148,18 @@ export default function PatientDetail() {
             procedures: result.note.procedures,
           },
         })
-        await fetchData()
       }
     }
+
+    // D-06: refetch patient_summaries on navigate (not via realtime) - trigger refetch
+    const { data: summaryData } = await supabase
+      .from('patient_summaries')
+      .select('*')
+      .eq('patient_id', patientId)
+      .order('generated_at', { ascending: false })
+      .limit(1)
+      .single()
+    if (summaryData) setPatientSummary(summaryData)
   }
 
   const generateHandoffReport = async () => {
@@ -129,13 +185,12 @@ export default function PatientDetail() {
 
       if (!response.ok) throw new Error('Failed to generate handoff report')
 
-      // Safe parse — n8n may return empty body
+      // Safe parse -- n8n may return empty body
       const text = await response.text()
-      if (!text) throw new Error('n8n returned empty response — check workflow Respond to Webhook node')
+      if (!text) throw new Error('n8n returned empty response -- check workflow Respond to Webhook node')
 
-      await fetchData()
-
-      // Verify report was actually created in Supabase
+      // Realtime will handle the new handoff appearing in the list
+      // But verify it was saved
       const { data: latestHandoff } = await supabase
         .from('handoff_reports')
         .select('id')
@@ -144,7 +199,7 @@ export default function PatientDetail() {
         .limit(1)
 
       if (!latestHandoff?.[0]) {
-        throw new Error('Handoff report was not saved to database — check n8n workflow')
+        throw new Error('Handoff report was not saved to database -- check n8n workflow')
       }
 
       setActiveTab('handoff')
@@ -160,7 +215,6 @@ export default function PatientDetail() {
           shift: nurse.shift,
         },
       })
-      await fetchData()
     } catch (err) {
       setHandoffError(err instanceof Error ? err.message : 'Failed to generate handoff report. Check that n8n is running.')
       toast.error('Failed to generate handoff report. Check that n8n is running.', { duration: 6000 })
@@ -171,11 +225,23 @@ export default function PatientDetail() {
 
   if (loading) {
     return (
-      <div className="max-w-7xl mx-auto px-8 py-8">
-        <div className="animate-pulse space-y-4">
-          <div className="h-8 bg-border rounded w-1/3" />
-          <div className="h-4 bg-border rounded w-1/4" />
-          <div className="h-64 bg-border rounded" />
+      <div className={cn('max-w-[1600px] mx-auto px-12 py-6')}>
+        <Skeleton className="h-5 w-40 mb-6" />
+        <div className={cn('grid grid-cols-[280px_1fr_360px] gap-6')}>
+          <Card className={cn('p-6 space-y-4')}>
+            <Skeleton className="h-6 w-3/4" />
+            <Skeleton className="h-4 w-1/2" />
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-2/3" />
+            <Skeleton className="h-4 w-full" />
+          </Card>
+          <div className={cn('space-y-4')}>
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-64 w-full" />
+          </div>
+          <div className={cn('space-y-4')}>
+            <Skeleton className="h-48 w-full" />
+          </div>
         </div>
       </div>
     )
@@ -183,9 +249,11 @@ export default function PatientDetail() {
 
   if (!patient) {
     return (
-      <div className="max-w-7xl mx-auto px-8 py-8">
-        <p className="text-secondary">Patient not found.</p>
-        <Link href="/" className="text-accent hover:text-accent-hover mt-2 inline-block">Back to Dashboard</Link>
+      <div className={cn('max-w-[1600px] mx-auto px-12 py-6')}>
+        <p className={cn('text-secondary')}>Patient not found.</p>
+        <Button variant="ghost" asChild className={cn('mt-2')}>
+          <Link href="/">Back to Dashboard</Link>
+        </Button>
       </div>
     )
   }
@@ -199,118 +267,122 @@ export default function PatientDetail() {
     { key: 'notes', label: 'Notes', count: notes.length },
     { key: 'supplies', label: 'Supply Requests', count: supplies.length },
     { key: 'handoff', label: 'Handoff Report', count: handoffs.length },
-    { key: 'activity' as Tab, label: 'Activity', count: auditEntries.length },
-    { key: 'context' as Tab, label: 'Context', count: patientSummary ? 1 : 0 },
+    { key: 'activity', label: 'Activity', count: auditEntries.length },
+    { key: 'context', label: 'Context', count: patientSummary ? 1 : 0 },
   ]
 
   return (
-    <div className="max-w-[1600px] mx-auto px-8 py-6">
+    <div className={cn('max-w-[1600px] mx-auto px-12 py-6')}>
       {/* Back nav */}
-      <Link href="/" className="inline-flex items-center gap-1 text-sm text-secondary hover:text-primary transition-colors mb-6">
-        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
-        </svg>
-        Back to Dashboard
-      </Link>
+      <Button variant="ghost" asChild className={cn('mb-6 -ml-2 text-secondary hover:text-primary')}>
+        <Link href="/" className={cn('inline-flex items-center gap-1 text-sm')}>
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
+          </svg>
+          Back to Dashboard
+        </Link>
+      </Button>
 
-      <div className="grid grid-cols-[280px_1fr_400px] gap-6">
-        {/* Left sidebar — Patient Info */}
-        <aside className="bg-surface border border-border rounded-lg p-5 h-fit">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-xl font-semibold text-primary">{patient.full_name}</h3>
-            <FlagBadge type={flagType} />
-          </div>
+      <div className={cn('grid grid-cols-[280px_1fr_360px] gap-6')}>
+        {/* Left sidebar -- Patient Info */}
+        <aside className={cn('border-r border-border pr-6 h-fit')}>
+          <Card className={cn('p-6')}>
+            <div className={cn('flex items-center justify-between mb-4')}>
+              <h3 className={cn('text-xl font-semibold text-primary')}>{patient.full_name}</h3>
+              <FlagBadge type={flagType} />
+            </div>
 
-          <dl className="space-y-3">
-            <div>
-              <dt className="text-xs font-medium uppercase tracking-wide text-secondary">Ward</dt>
-              <dd className="text-sm text-primary mt-0.5">{patient.ward}</dd>
-            </div>
-            <div>
-              <dt className="text-xs font-medium uppercase tracking-wide text-secondary">Unit Type</dt>
-              <dd className="text-sm text-primary mt-0.5 capitalize">{patient.unit_type}</dd>
-            </div>
-            <div>
-              <dt className="text-xs font-medium uppercase tracking-wide text-secondary">Date of Birth</dt>
-              <dd className="text-sm text-primary mt-0.5" suppressHydrationWarning>{new Date(patient.date_of_birth).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</dd>
-            </div>
-            <div>
-              <dt className="text-xs font-medium uppercase tracking-wide text-secondary">Admitted</dt>
-              <dd className="text-sm text-primary mt-0.5" suppressHydrationWarning>{new Date(patient.admission_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</dd>
-            </div>
-            <div>
-              <dt className="text-xs font-medium uppercase tracking-wide text-secondary">Current Status</dt>
-              <dd className="text-sm text-primary mt-0.5 leading-relaxed">{patient.current_status}</dd>
-            </div>
-          </dl>
+            <dl className={cn('space-y-3')}>
+              <div>
+                <dt className={cn('text-xs font-medium uppercase tracking-wide text-secondary')}>Ward</dt>
+                <dd className={cn('text-sm text-primary mt-0.5')}>{patient.ward}</dd>
+              </div>
+              <div>
+                <dt className={cn('text-xs font-medium uppercase tracking-wide text-secondary')}>Unit Type</dt>
+                <dd className={cn('text-sm text-primary mt-0.5 capitalize')}>{patient.unit_type}</dd>
+              </div>
+              <div>
+                <dt className={cn('text-xs font-medium uppercase tracking-wide text-secondary')}>Date of Birth</dt>
+                <dd className={cn('text-sm text-primary mt-0.5')} suppressHydrationWarning>{new Date(patient.date_of_birth).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</dd>
+              </div>
+              <div>
+                <dt className={cn('text-xs font-medium uppercase tracking-wide text-secondary')}>Admitted</dt>
+                <dd className={cn('text-sm text-primary mt-0.5')} suppressHydrationWarning>{new Date(patient.admission_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</dd>
+              </div>
+              <div>
+                <dt className={cn('text-xs font-medium uppercase tracking-wide text-secondary')}>Current Status</dt>
+                <dd className={cn('text-sm text-primary mt-0.5 leading-relaxed')}>{patient.current_status}</dd>
+              </div>
+            </dl>
+          </Card>
 
-          <div className="mt-6 pt-4 border-t border-border">
-            <button
+          <div className={cn('mt-6')}>
+            <Button
+              variant="outline"
               onClick={generateHandoffReport}
               disabled={generatingHandoff}
-              className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-lg border border-accent text-accent bg-background hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150"
+              className={cn('w-full')}
             >
               {generatingHandoff ? (
                 <>
-                  <div className="w-4 h-4 border-2 border-accent border-t-transparent rounded-full animate-spin" />
+                  <div className={cn('w-4 h-4 border-2 border-accent border-t-transparent rounded-full animate-spin')} />
                   Generating...
                 </>
               ) : (
                 <>
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
                   </svg>
                   Generate Handoff Report
                 </>
               )}
-            </button>
+            </Button>
             {handoffError && (
-              <div className="mt-3 p-3 bg-flag-critical-bg rounded-lg">
-                <div className="flex items-start gap-2">
+              <div className={cn('mt-3 p-3 bg-flag-critical-bg rounded-lg')}>
+                <div className={cn('flex items-start gap-2')}>
                   <svg className="w-4 h-4 text-flag-critical shrink-0 mt-0.5" aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
                   </svg>
-                  <p className="text-sm text-flag-critical">{handoffError}</p>
+                  <p className={cn('text-sm text-flag-critical')}>{handoffError}</p>
                 </div>
               </div>
             )}
           </div>
         </aside>
 
-        {/* Center — Tabbed content */}
-        <div>
-          <div className="flex items-center gap-1 mb-4 border-b border-border" role="tablist">
-            {tabs.map((tab) => (
-              <button
-                key={tab.key}
-                role="tab"
-                aria-selected={activeTab === tab.key}
-                aria-controls={`panel-${tab.key}`}
-                onClick={() => setActiveTab(tab.key)}
-                className={`px-4 py-2.5 text-sm font-medium transition-colors border-b-2 -mb-px ${
-                  activeTab === tab.key
-                    ? 'border-accent text-accent'
-                    : 'border-transparent text-secondary hover:text-primary'
-                }`}
-              >
-                {tab.label}
-                {tab.count > 0 && (
-                  <span className={`ml-1.5 px-1.5 py-0.5 text-xs rounded-full ${
-                    activeTab === tab.key ? 'bg-accent/10 text-accent' : 'bg-surface text-muted'
-                  }`}>
-                    {tab.count}
-                  </span>
-                )}
-              </button>
-            ))}
-          </div>
+        {/* Center -- Tabbed content */}
+        <div className={cn('px-2')}>
+          <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as Tab)} className={cn('flex-1')}>
+            <TabsList className={cn('w-full justify-start bg-transparent border-b border-border rounded-none h-auto p-0 gap-0')}>
+              {tabs.map((tab) => (
+                <TabsTrigger
+                  key={tab.key}
+                  value={tab.key}
+                  className={cn(
+                    'rounded-none border-b-2 border-transparent px-4 py-2.5 text-sm font-medium transition-colors',
+                    'data-[state=active]:border-accent data-[state=active]:text-accent data-[state=active]:bg-transparent data-[state=active]:shadow-none',
+                    'data-[state=inactive]:text-secondary hover:text-primary'
+                  )}
+                >
+                  {tab.label}
+                  {tab.count > 0 && (
+                    <span className={cn(
+                      'ml-1.5 px-1.5 py-0.5 text-xs rounded-full',
+                      'bg-surface text-muted'
+                    )}>
+                      {tab.count}
+                    </span>
+                  )}
+                </TabsTrigger>
+              ))}
+            </TabsList>
 
-          <div className="space-y-4">
-            {activeTab === 'notes' && (
-              notes.length === 0 ? (
-                <div className="bg-surface border border-border rounded-lg p-8 text-center">
-                  <p className="text-secondary">No notes yet. Use the dictation input to create the first note.</p>
-                </div>
+            <TabsContent value="notes" className={cn('mt-4 space-y-4')}>
+              {notes.length === 0 ? (
+                <Card className={cn('text-center py-12')}>
+                  <p className={cn('text-sm font-medium text-primary mb-1')}>No notes recorded</p>
+                  <p className={cn('text-sm text-secondary')}>Use the dictation panel to record your first observation for this patient.</p>
+                </Card>
               ) : (
                 notes.map((note, index) => (
                   <StructuredNote
@@ -324,43 +396,43 @@ export default function PatientDetail() {
                     onAction={fetchData}
                   />
                 ))
-              )
-            )}
+              )}
+            </TabsContent>
 
-            {activeTab === 'supplies' && (
-              <>
-                <ProcedureSearch
-                  patientId={patientId}
-                  unitType={patient.unit_type}
-                  onResult={fetchData}
-                />
-                {supplies.length === 0 ? (
-                  <div className="bg-surface border border-border rounded-lg p-8 text-center">
-                    <p className="text-secondary">No supply requests yet. Search for a procedure above or dictate a note that mentions one.</p>
-                  </div>
-                ) : (
-                  supplies.map((supply) => (
-                    <SupplyChecklist
-                      key={supply.id}
-                      supplyRequestId={supply.id}
-                      patientId={patientId}
-                      procedure={supply.procedure}
-                      items={supply.items}
-                      generatedAt={new Date(supply.generated_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
-                      initialConfirmedItems={supply.confirmed_items || {}}
-                      onAuditChange={fetchData}
-                      rationale={supply.rationale}
-                    />
-                  ))
-                )}
-              </>
-            )}
+            <TabsContent value="supplies" className={cn('mt-4 space-y-4')}>
+              <ProcedureSearch
+                patientId={patientId}
+                unitType={patient.unit_type}
+                onResult={fetchData}
+              />
+              {supplies.length === 0 ? (
+                <Card className={cn('text-center py-12')}>
+                  <p className={cn('text-sm font-medium text-primary mb-1')}>No supply requests</p>
+                  <p className={cn('text-sm text-secondary')}>Supply lists are generated automatically when a procedure is mentioned in a note.</p>
+                </Card>
+              ) : (
+                supplies.map((supply) => (
+                  <SupplyChecklist
+                    key={supply.id}
+                    supplyRequestId={supply.id}
+                    patientId={patientId}
+                    procedure={supply.procedure}
+                    items={supply.items}
+                    generatedAt={new Date(supply.generated_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
+                    initialConfirmedItems={supply.confirmed_items || {}}
+                    onAuditChange={fetchData}
+                    rationale={supply.rationale}
+                  />
+                ))
+              )}
+            </TabsContent>
 
-            {activeTab === 'handoff' && (
-              handoffs.length === 0 ? (
-                <div className="bg-surface border border-border rounded-lg p-8 text-center">
-                  <p className="text-secondary">No handoff reports yet. Click &ldquo;Generate Handoff Report&rdquo; in the sidebar to create one.</p>
-                </div>
+            <TabsContent value="handoff" className={cn('mt-4 space-y-4')}>
+              {handoffs.length === 0 ? (
+                <Card className={cn('text-center py-12')}>
+                  <p className={cn('text-sm font-medium text-primary mb-1')}>No handoff report</p>
+                  <p className={cn('text-sm text-secondary')}>Generate a handoff report to brief the incoming nurse on this patient&apos;s current state.</p>
+                </Card>
               ) : (
                 handoffs.map((report) => (
                   <HandoffReport
@@ -374,21 +446,21 @@ export default function PatientDetail() {
                     incomingShift={nurse.shift === 'Night' ? 'Morning' : 'Night'}
                   />
                 ))
-              )
-            )}
+              )}
+            </TabsContent>
 
-            {activeTab === 'activity' && (
+            <TabsContent value="activity" className={cn('mt-4 space-y-4')}>
               <ActivityTimeline entries={auditEntries} />
-            )}
+            </TabsContent>
 
-            {activeTab === 'context' && (
+            <TabsContent value="context" className={cn('mt-4 space-y-4')}>
               <PatientContextSummary summary={patientSummary} loading={loading} />
-            )}
-          </div>
+            </TabsContent>
+          </Tabs>
         </div>
 
-        {/* Right panel — Dictation Input */}
-        <div className="space-y-4">
+        {/* Right panel -- Dictation Input */}
+        <div className={cn('border-l border-border pl-6 space-y-4')}>
           <DictationInput
             patientId={patientId}
             patientName={patient.full_name}
