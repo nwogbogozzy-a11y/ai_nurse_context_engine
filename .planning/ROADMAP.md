@@ -87,7 +87,7 @@ Plans:
 - [x] 04-02-PLAN.md — Supabase Realtime migration + subscription hooks
 - [ ] 04-03-PLAN.md — Layout header, NurseSwitcher, FlagBadge, NurseActionBar, PatientCard migration
 - [ ] 04-04-PLAN.md — StructuredNote, DictationInput, SupplyChecklist, HandoffReport migration
-- [ ] 04-05-PLAN.md — ActivityTimeline, PatientContextSummary, ProcedureSearch migration
+- [x] 04-05-PLAN.md — ActivityTimeline, PatientContextSummary, ProcedureSearch migration
 - [ ] 04-06-PLAN.md — Page-level wiring: realtime subscriptions, shadcn Tabs, visual polish
 **UI hint**: yes
 
@@ -100,4 +100,4 @@ Plans:
 | 1. Functional Foundation | 4/4 | Complete |  |
 | 2. Compliance and Audit Trail | 0/2 | In Progress | - |
 | 3. AI Context Memory | 0/3 | Not started | - |
-| 4. Real-Time System and UI Overhaul | 0/6 | Not started | - |
+| 4. Real-Time System and UI Overhaul | 3/6 | In Progress|  |
