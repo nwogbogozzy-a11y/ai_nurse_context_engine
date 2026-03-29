@@ -6,6 +6,11 @@ import { supabase } from '@/lib/supabase'
 import { insertAuditEntry } from '@/lib/audit'
 import { useNurse } from '@/contexts/NurseContext'
 import { toast } from 'sonner'
+import { Card, CardHeader, CardContent, CardFooter } from '@/components/ui/card'
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Button } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 
 interface SupplyChecklistProps {
   supplyRequestId: string
@@ -77,14 +82,14 @@ export function SupplyChecklist({ supplyRequestId, patientId, procedure, items, 
   const allConfirmed = items.every((_, i) => confirmed[i])
 
   return (
-    <div className="bg-surface border border-border rounded-lg overflow-hidden">
-      <div className="px-5 py-3 border-b border-border">
-        <h4 className="text-lg font-semibold text-primary">Supply Prep Recommendations</h4>
-        <p className="text-xs text-muted mt-0.5">{procedure} | Generated: {generatedAt}</p>
+    <Card className="overflow-hidden">
+      <CardHeader className="px-5 py-3 border-b border-border space-y-1">
+        <h4 className="text-lg font-semibold text-primary">Procedure Prep Recommendations</h4>
+        <p className="text-xs text-muted">{procedure} | Generated: {generatedAt}</p>
         {rationale && (
-          <p className="text-xs text-muted mt-1">AI suggested based on {procedure}</p>
+          <p className="text-xs text-muted">AI suggested based on {procedure}</p>
         )}
-      </div>
+      </CardHeader>
 
       {rationale && (
         <div className="px-5 py-2 border-b border-border">
@@ -94,7 +99,7 @@ export function SupplyChecklist({ supplyRequestId, patientId, procedure, items, 
             aria-expanded={showRationale}
             aria-controls="supply-rationale"
           >
-            <svg className={`w-3 h-3 transition-transform duration-150 ${showRationale ? 'rotate-90' : ''}`} fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" aria-hidden="true">
+            <svg className={cn('w-3 h-3 transition-transform duration-150', showRationale && 'rotate-90')} fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" aria-hidden="true">
               <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
             </svg>
             {showRationale ? 'Hide Rationale' : 'View Rationale'}
@@ -109,69 +114,60 @@ export function SupplyChecklist({ supplyRequestId, patientId, procedure, items, 
         </div>
       )}
 
-      <table className="w-full">
-        <thead>
-          <tr className="border-b border-border">
-            <th className="px-5 py-2 text-left text-xs font-medium uppercase tracking-wide text-secondary">Item</th>
-            <th className="px-3 py-2 text-left text-xs font-medium uppercase tracking-wide text-secondary">Qty</th>
-            <th className="px-3 py-2 text-left text-xs font-medium uppercase tracking-wide text-secondary">Unit</th>
-            <th className="px-3 py-2 text-left text-xs font-medium uppercase tracking-wide text-secondary">Notes</th>
-            <th className="px-3 py-2 text-center text-xs font-medium uppercase tracking-wide text-secondary">
-              <span className="sr-only">Confirm</span>
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {items.map((item, i) => (
-            <tr key={i} className="border-b border-border last:border-b-0">
-              <td className="px-5 py-3 text-sm text-primary">{item.item}</td>
-              <td className="px-3 py-3 text-sm font-mono text-primary">{item.quantity}</td>
-              <td className="px-3 py-3 text-sm text-secondary">{item.unit}</td>
-              <td className="px-3 py-3 text-sm text-muted">{item.notes || '—'}</td>
-              <td className="px-3 py-3 text-center">
-                <button
-                  onClick={() => toggleItem(i)}
-                  className={`w-6 h-6 rounded border flex items-center justify-center transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-accent ${
-                    confirmed[i]
-                      ? 'bg-flag-safe border-flag-safe text-accent-foreground'
-                      : 'border-border bg-background hover:border-accent'
-                  }`}
-                  aria-label={`${confirmed[i] ? 'Uncheck' : 'Confirm'} ${item.item}`}
-                  aria-checked={!!confirmed[i]}
-                  role="checkbox"
-                >
-                  {confirmed[i] && (
-                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
-                    </svg>
-                  )}
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <CardContent className="p-0">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="px-5 text-xs font-medium uppercase tracking-wide text-secondary">Item</TableHead>
+              <TableHead className="px-3 text-xs font-medium uppercase tracking-wide text-secondary">Qty</TableHead>
+              <TableHead className="px-3 text-xs font-medium uppercase tracking-wide text-secondary">Unit</TableHead>
+              <TableHead className="px-3 text-xs font-medium uppercase tracking-wide text-secondary">Notes</TableHead>
+              <TableHead className="px-3 text-center text-xs font-medium uppercase tracking-wide text-secondary">
+                <span className="sr-only">Confirm</span>
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {items.map((item, i) => (
+              <TableRow key={i}>
+                <TableCell className="px-5 text-sm text-primary">{item.item}</TableCell>
+                <TableCell className="px-3 text-sm font-mono text-primary">{item.quantity}</TableCell>
+                <TableCell className="px-3 text-sm text-secondary">{item.unit}</TableCell>
+                <TableCell className="px-3 text-sm text-muted">{item.notes || '\u2014'}</TableCell>
+                <TableCell className="px-3 text-center">
+                  <Checkbox
+                    checked={!!confirmed[i]}
+                    onCheckedChange={() => toggleItem(i)}
+                    aria-label={`${confirmed[i] ? 'Uncheck' : 'Confirm'} ${item.item}`}
+                    className={cn(
+                      'h-5 w-5',
+                      confirmed[i] && 'data-[state=checked]:bg-flag-safe data-[state=checked]:border-flag-safe'
+                    )}
+                  />
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </CardContent>
 
-      <div className="px-5 py-3 border-t border-border flex items-center justify-between">
+      <CardFooter className="px-5 py-3 border-t border-border flex items-center justify-between">
         <span className="text-xs text-muted">
           {Object.values(confirmed).filter(Boolean).length} of {items.length} confirmed
         </span>
         {allReady || allConfirmed ? (
           <span className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold rounded-lg bg-flag-safe-bg text-flag-safe">
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
               <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
             </svg>
             All Ready
           </span>
         ) : (
-          <button
-            onClick={markAllReady}
-            className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold rounded-lg bg-accent text-accent-foreground hover:bg-accent-hover focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 transition-colors duration-150"
-          >
+          <Button onClick={markAllReady}>
             Mark All Ready
-          </button>
+          </Button>
         )}
-      </div>
-    </div>
+      </CardFooter>
+    </Card>
   )
 }
