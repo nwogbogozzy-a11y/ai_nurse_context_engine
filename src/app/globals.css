@@ -22,6 +22,19 @@
   --color-flag-review-hover: #E0E7FF;
   --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
   --font-mono: ui-monospace, 'SF Mono', 'Cascadia Code', monospace;
+
+  /* shadcn/ui CSS variable aliases — mapped to clinical design tokens */
+  --color-foreground: #0F172A;
+  --color-card: #F8FAFC;
+  --color-card-foreground: #0F172A;
+  --color-popover: #FFFFFF;
+  --color-popover-foreground: #0F172A;
+  --color-muted-foreground: #475569;
+  --color-destructive: #EF4444;
+  --color-input: #E2E8F0;
+  --color-ring: #0EA5E9;
+  --color-radius: 0.5rem;
+  --color-secondary-foreground: #0F172A;
 }
 
 @layer base {
