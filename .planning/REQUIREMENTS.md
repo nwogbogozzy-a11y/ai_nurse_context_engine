@@ -37,7 +37,7 @@
 ### UI Professional Polish
 
 - [x] **UI-01**: All components upgraded to shadcn/ui with Radix primitives (WCAG 2.1 AA accessible by default)
-- [ ] **UI-02**: Patient dashboard uses card components with clear visual hierarchy (name, ward, status, last note timestamp, flag badges)
+- [x] **UI-02**: Patient dashboard uses card components with clear visual hierarchy (name, ward, status, last note timestamp, flag badges)
 - [ ] **UI-03**: Patient detail view three-panel layout has professional typography, spacing, and visual separation between panels
 - [x] **UI-04**: Structured SOAP notes display with clear visual hierarchy (section headers, indentation, temporal context)
 - [x] **UI-05**: Flag badges use semantic color system consistently (amber=warning, red=critical, green=safe) with sufficient contrast for WCAG AA
@@ -99,7 +99,7 @@
 | RT-03 | Phase 4 | Complete |
 | RT-04 | Phase 4 | Complete |
 | UI-01 | Phase 4 | Complete |
-| UI-02 | Phase 4 | Pending |
+| UI-02 | Phase 4 | Complete |
 | UI-03 | Phase 4 | Pending |
 | UI-06 | Phase 4 | Complete |
 
