@@ -84,7 +84,7 @@ Plans:
 **Plans**: 6 plans
 Plans:
 - [ ] 04-01-PLAN.md — shadcn/ui init, CSS variable remapping, skeleton loaders, TimeoutRetry
-- [ ] 04-02-PLAN.md — Supabase Realtime migration + subscription hooks
+- [x] 04-02-PLAN.md — Supabase Realtime migration + subscription hooks
 - [ ] 04-03-PLAN.md — Layout header, NurseSwitcher, FlagBadge, NurseActionBar, PatientCard migration
 - [ ] 04-04-PLAN.md — StructuredNote, DictationInput, SupplyChecklist, HandoffReport migration
 - [ ] 04-05-PLAN.md — ActivityTimeline, PatientContextSummary, ProcedureSearch migration

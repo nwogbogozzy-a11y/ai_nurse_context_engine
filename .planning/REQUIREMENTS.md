@@ -29,10 +29,10 @@
 
 ### Real-Time System
 
-- [ ] **RT-01**: When Nurse A submits a note, Nurse B's open view of the same patient updates automatically without manual refresh (Supabase Realtime subscription on notes table)
-- [ ] **RT-02**: When a handoff report is generated, any open patient view reflects the new report automatically
-- [ ] **RT-03**: When supply requests are created, any open patient view reflects the new supplies automatically
-- [ ] **RT-04**: Patient dashboard (home page) reflects status changes in real-time (flag badges update live)
+- [x] **RT-01**: When Nurse A submits a note, Nurse B's open view of the same patient updates automatically without manual refresh (Supabase Realtime subscription on notes table)
+- [x] **RT-02**: When a handoff report is generated, any open patient view reflects the new report automatically
+- [x] **RT-03**: When supply requests are created, any open patient view reflects the new supplies automatically
+- [x] **RT-04**: Patient dashboard (home page) reflects status changes in real-time (flag badges update live)
 
 ### UI Professional Polish
 
@@ -94,10 +94,10 @@
 | AICTX-04 | Phase 3 | Complete |
 | UI-04 | Phase 3 | Complete |
 | UI-10 | Phase 3 | Complete |
-| RT-01 | Phase 4 | Pending |
-| RT-02 | Phase 4 | Pending |
-| RT-03 | Phase 4 | Pending |
-| RT-04 | Phase 4 | Pending |
+| RT-01 | Phase 4 | Complete |
+| RT-02 | Phase 4 | Complete |
+| RT-03 | Phase 4 | Complete |
+| RT-04 | Phase 4 | Complete |
 | UI-01 | Phase 4 | Pending |
 | UI-02 | Phase 4 | Pending |
 | UI-03 | Phase 4 | Pending |
