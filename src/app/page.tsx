@@ -8,6 +8,7 @@ import { PatientCard } from '@/components/PatientCard'
 export default function Dashboard() {
   const [patients, setPatients] = useState<Patient[]>([])
   const [latestNotes, setLatestNotes] = useState<Record<string, Note | null>>({})
+  const [unresolvedCounts, setUnresolvedCounts] = useState<Record<string, number>>({})
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -21,6 +22,8 @@ export default function Dashboard() {
         setPatients(patientsData)
 
         const noteMap: Record<string, Note | null> = {}
+        const flagCounts: Record<string, number> = {}
+
         for (const p of patientsData) {
           const { data: notes } = await supabase
             .from('notes')
@@ -30,8 +33,19 @@ export default function Dashboard() {
             .limit(1)
 
           noteMap[p.id] = notes?.[0] || null
+
+          const { count } = await supabase
+            .from('notes')
+            .select('*', { count: 'exact', head: true })
+            .eq('patient_id', p.id)
+            .eq('flagged', true)
+            .in('review_status', ['pending', 'under_review', 'escalated'])
+
+          flagCounts[p.id] = count || 0
         }
+
         setLatestNotes(noteMap)
+        setUnresolvedCounts(flagCounts)
       }
 
       setLoading(false)
@@ -41,7 +55,7 @@ export default function Dashboard() {
   }, [])
 
   return (
-    <div className="max-w-7xl mx-auto px-8 py-8">
+    <div className="max-w-[1600px] mx-auto px-12 py-8">
       <div className="mb-8">
         <h2 className="text-2xl font-semibold text-primary">Patient Dashboard</h2>
         <p className="text-sm text-secondary mt-1">
@@ -67,6 +81,7 @@ export default function Dashboard() {
               key={patient.id}
               patient={patient}
               latestNote={latestNotes[patient.id]}
+              unresolvedFlagCount={unresolvedCounts[patient.id]}
             />
           ))}
         </div>
