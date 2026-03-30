@@ -22,6 +22,7 @@ import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { HandoffSkeleton } from '@/components/skeletons/HandoffSkeleton'
+import { config } from '@/lib/config'
 import { cn } from '@/lib/utils'
 
 type Tab = 'notes' | 'supplies' | 'handoff' | 'activity' | 'context'
@@ -168,7 +169,7 @@ export default function PatientDetail() {
     setGeneratingHandoff(true)
     setHandoffError(null)
 
-    const webhookUrl = process.env.NEXT_PUBLIC_N8N_WEBHOOK_URL || 'http://localhost:5678/webhook/nurse-context'
+    const webhookUrl = config.n8nWebhookUrl
 
     try {
       const lastNote = notes[0]

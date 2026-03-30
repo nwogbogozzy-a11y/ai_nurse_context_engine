@@ -3,6 +3,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 import { DEMO_SCRIPTS } from '@/lib/demo-scripts'
 import { WebhookResponse } from '@/lib/types'
+import { config } from '@/lib/config'
 import { useNurse } from '@/contexts/NurseContext'
 import { toast } from 'sonner'
 import { Card, CardHeader, CardContent } from '@/components/ui/card'
@@ -69,7 +70,7 @@ export function DictationInput({ patientId, patientName, onResult }: DictationIn
     setState('processing')
     lastInputRef.current = rawInput
 
-    const webhookUrl = process.env.NEXT_PUBLIC_N8N_WEBHOOK_URL || 'http://localhost:5678/webhook/nurse-context'
+    const webhookUrl = config.n8nWebhookUrl
 
     try {
       const response = await fetch(webhookUrl, {

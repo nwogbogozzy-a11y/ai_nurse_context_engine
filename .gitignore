@@ -35,3 +35,10 @@ next-env.d.ts
 
 # Vercel
 .vercel
+
+# NotebookLM artifact IDs
+notebook-ids.json
+**/notebook-ids.json
+
+# Agent worktrees
+.claude/worktrees/

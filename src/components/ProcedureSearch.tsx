@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { config } from '@/lib/config'
 import { Card, CardHeader, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { SupplySkeleton } from '@/components/skeletons/SupplySkeleton'
@@ -26,7 +27,7 @@ export function ProcedureSearch({ patientId, unitType, onResult }: ProcedureSear
     setState('loading')
     setError(null)
 
-    const webhookUrl = process.env.NEXT_PUBLIC_N8N_WEBHOOK_URL_SUPPLY || 'http://localhost:5678/webhook/supply-lookup'
+    const webhookUrl = config.n8nSupplyWebhookUrl
 
     try {
       const response = await fetch(webhookUrl, {
