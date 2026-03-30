@@ -86,7 +86,7 @@ export function ActivityTimeline({ entries }: ActivityTimelineProps) {
               </p>
               <time
                 dateTime={entry.created_at}
-                className={cn('text-xs text-muted')}
+                className={cn('text-xs text-muted font-mono')}
                 suppressHydrationWarning
               >
                 {formatNoteTimestamp(entry.created_at)}

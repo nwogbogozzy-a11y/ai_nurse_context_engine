@@ -24,7 +24,7 @@ export default function RootLayout({
       </head>
       <body className="antialiased" suppressHydrationWarning>
         <NurseProvider>
-          <header className="sticky top-0 z-50 border-b border-border bg-background">
+          <header className="sticky top-0 z-50 border-b border-border bg-background shadow-sm">
             <div className="max-w-[1600px] mx-auto px-12 py-3 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-lg bg-accent flex items-center justify-center">

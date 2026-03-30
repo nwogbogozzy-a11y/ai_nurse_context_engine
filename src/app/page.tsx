@@ -6,6 +6,7 @@ import { Patient, Note } from '@/lib/types'
 import { PatientCard } from '@/components/PatientCard'
 import { useDashboardRealtime } from '@/hooks/useDashboardRealtime'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Card } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
 
 export default function Dashboard() {
@@ -100,7 +101,7 @@ export default function Dashboard() {
       <div className={cn('mb-8')}>
         <h2 className={cn('text-2xl font-semibold text-primary')}>Patient Dashboard</h2>
         <p className={cn('text-sm text-secondary mt-1')}>
-          {patients.length} active patients | Day shift
+          {patients.length} active patients{Object.values(unresolvedFlags).reduce((a, b) => a + b, 0) > 0 && ` | ${Object.values(unresolvedFlags).reduce((a, b) => a + b, 0)} unresolved flags`} | Day shift
         </p>
       </div>
 
@@ -115,6 +116,11 @@ export default function Dashboard() {
             </div>
           ))}
         </div>
+      ) : patients.length === 0 ? (
+        <Card className={cn('text-center py-12')}>
+          <p className={cn('text-sm font-medium text-primary mb-1')}>No patients assigned to this shift</p>
+          <p className={cn('text-sm text-secondary')}>Contact charge nurse for patient assignments.</p>
+        </Card>
       ) : (
         <div className={cn('grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8')}>
           {patients.map((patient) => (

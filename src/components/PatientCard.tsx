@@ -51,7 +51,7 @@ export function PatientCard({ patient, latestNote, unresolvedFlagCount = 0 }: Pa
       <Card
         className={cn(
           borderClass,
-          'p-6 h-full hover:shadow-md transition-shadow duration-150 cursor-pointer'
+          'p-6 h-full hover:shadow-md transition-shadow duration-100 cursor-pointer'
         )}
       >
         <CardHeader className={cn('p-0 pb-3 flex flex-row items-center justify-between space-y-0')}>
@@ -87,7 +87,7 @@ export function PatientCard({ patient, latestNote, unresolvedFlagCount = 0 }: Pa
         </CardContent>
 
         <CardFooter className={cn('p-0 pt-3')}>
-          <p className={cn('text-xs text-muted')}>
+          <p className={cn('text-xs text-muted font-mono')}>
             {latestNote
               ? `Last note: ${formatTimestamp(latestNote.created_at)}`
               : 'No notes yet'}

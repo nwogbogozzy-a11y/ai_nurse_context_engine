@@ -183,11 +183,12 @@ export function NurseActionBar({
             Escalate
           </Button>
           <Button
-            variant="destructive"
+            variant="ghost"
             size="sm"
             onClick={() => handleAction('override')}
             disabled={loading}
-            aria-label="Override AI flag -- use clinical judgment"
+            aria-label="Override AI flag - use clinical judgment"
+            className="text-muted hover:text-primary"
           >
             Override
           </Button>

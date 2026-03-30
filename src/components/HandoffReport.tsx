@@ -29,9 +29,17 @@ export function HandoffReport({
     <div>
       {/* Report header */}
       <div className="mb-4">
-        <h4 className="text-lg font-semibold text-primary">Shift Handoff Report</h4>
+        <div className="flex items-center justify-between">
+          <h4 className="text-lg font-semibold text-primary">Shift Handoff Report</h4>
+          <span className="text-xs text-muted italic inline-flex items-center gap-1">
+            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456Z" />
+            </svg>
+            AI-Generated Report
+          </span>
+        </div>
         <p className="text-sm text-secondary mt-1">{patientName} | Incoming: {incomingShift} shift</p>
-        <time className="text-xs text-muted">{generatedAt}</time>
+        <time className="text-xs text-muted font-mono">{generatedAt}</time>
       </div>
 
       {/* Card stack */}
@@ -42,7 +50,7 @@ export function HandoffReport({
             <span className="text-xs font-semibold uppercase tracking-wider text-secondary">Summary</span>
           </CardHeader>
           <CardContent className="px-5 py-4">
-            <p className="text-sm leading-relaxed text-primary">{summary}</p>
+            <p className="text-sm leading-[1.75] text-primary max-w-[720px]">{summary}</p>
           </CardContent>
         </Card>
 

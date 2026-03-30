@@ -228,7 +228,7 @@ export default function PatientDetail() {
     return (
       <div className={cn('max-w-[1600px] mx-auto px-12 py-6')}>
         <Skeleton className="h-5 w-40 mb-6" />
-        <div className={cn('grid grid-cols-[280px_1fr_360px] gap-6')}>
+        <div className={cn('grid grid-cols-[280px_1fr_400px] gap-6')}>
           <Card className={cn('p-6 space-y-4')}>
             <Skeleton className="h-6 w-3/4" />
             <Skeleton className="h-4 w-1/2" />
@@ -284,7 +284,7 @@ export default function PatientDetail() {
         </Link>
       </Button>
 
-      <div className={cn('grid grid-cols-[280px_1fr_360px] gap-6')}>
+      <div className={cn('grid grid-cols-[280px_1fr_400px] gap-6')}>
         {/* Left sidebar -- Patient Info */}
         <aside className={cn('border-r border-border pr-6 h-fit')}>
           <Card className={cn('p-6')}>
